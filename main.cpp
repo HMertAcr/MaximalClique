@@ -2,70 +2,37 @@
 #include <string>
 #include <vector>
 
-class node
+std::string binaryRep(const unsigned int bit, const unsigned int bitlength)
 {
-public:
-    unsigned int bit;
+    std::string s;
+    s.reserve(bitlength);
+    s = "";
 
-    // Default constructor
-    node()
+    for (unsigned int i = 0; i < bitlength; i++)
     {
+        s = ((bit & (1 << i)) ? "1" : "0") + s;
+    }
+    return s;
+}
+
+static unsigned int hammingDistance(const unsigned int bit_a, const unsigned int bit_b)
+{
+    int diff = bit_a ^ bit_b;
+    int count = 0;
+
+    while (diff != 0)
+    {
+        count++;
+        diff &= diff - 1;
     }
 
-    // Constructor
-    node(unsigned int bit, unsigned int bitlength)
-    {
-        this->bit = bit;
-    }
-
-    // Copy constructor
-    node(const node &n)
-    {
-        this->bit = n.bit;
-    }
-
-    // Destructor
-    ~node()
-    {
-    }
-
-    bool operator==(const node &n) const
-    {
-        return (this->bit == n.bit);
-    }
-
-    std::string binrep(const unsigned int bitlength)
-    {
-        std::string s;
-        s.reserve(bitlength);
-        s = "";
-
-        for (unsigned int i = 0; i < bitlength; i++)
-        {
-            s = ((bit & (1 << i)) ? "1" : "0") + s;
-        }
-        return s;
-    }
-
-    static unsigned int hammingDistance(node a, node b)
-    {
-        int diff = a.bit ^ b.bit;
-        int count = 0;
-
-        while (diff != 0)
-        {
-            count++;
-            diff &= diff - 1;
-        }
-
-        return count;
-    }
-};
+    return count;
+}
 
 class graph
 {
 public:
-    std::vector<node> nodes;
+    std::vector<unsigned int> nodes;
     unsigned int bitlength;
 
     // Default constructor
@@ -80,7 +47,7 @@ public:
 
         for (unsigned int i = 0; i < (1 << bitlength); i++)
         {
-            nodes.push_back(node(i, bitlength));
+            nodes.push_back(i);
         }
     }
 
@@ -97,21 +64,21 @@ public:
         nodes.clear();
     }
 
-    static bool isSameNodes(std::vector<node> a, std::vector<node> b)
+    static bool isSameNodes(std::vector<unsigned int> nodes_a, std::vector<unsigned int> nodes_b)
     {
-        if (a.size() != b.size())
+        if (nodes_a.size() != nodes_b.size())
         {
             return false;
         }
 
-        for (unsigned int i = 0; i < a.size(); i++)
+        for (unsigned int i = 0; i < nodes_a.size(); i++)
         {
             bool found = false;
-            for (unsigned int j = 0; j < b.size(); j++)
+            for (unsigned int j = 0; j < nodes_b.size(); j++)
             {
-                if (a[i] == b[j])
+                if (nodes_a[i] == nodes_b[j])
                 {
-                    b.erase(b.begin() + j);
+                    nodes_b.erase(nodes_b.begin() + j);
                     found = true;
                     break;
                 }
@@ -125,10 +92,10 @@ public:
         return true;
     }
 
-    static void removeDuplicateNodes(std::vector<std::vector<node>> &nodes)
+    static void removeDuplicateNodes(std::vector<std::vector<unsigned int>> &nodes)
     {
 
-        std::vector<std::vector<node>> newNodes;
+        std::vector<std::vector<unsigned int>> newNodes;
 
         for (unsigned int i = 0; i < nodes.size(); i++)
         {
@@ -150,16 +117,16 @@ public:
         nodes = newNodes;
     }
 
-    std::vector<std::vector<node>> getSubsets(std::vector<node> &nums)
+    std::vector<std::vector<unsigned int>> getSubsets(std::vector<unsigned int> &nums)
     {
 
-        std::vector<std::vector<node>> subset;
-        std::vector<node> empty;
+        std::vector<std::vector<unsigned int>> subset;
+        std::vector<unsigned int> empty;
         subset.push_back(empty);
 
         for (int i = 0; i < nums.size(); i++)
         {
-            std::vector<std::vector<node>> subsetTemp = subset;
+            std::vector<std::vector<unsigned int>> subsetTemp = subset;
 
             for (int j = 0; j < subsetTemp.size(); j++)
             {
@@ -174,13 +141,13 @@ public:
         return subset;
     }
 
-    bool checkClique(std::vector<node> clique, unsigned int d)
+    bool checkClique(std::vector<unsigned int> clique, unsigned int d)
     {
         for (unsigned int i = 0; i < clique.size(); i++)
         {
             for (unsigned int j = i + 1; j < clique.size(); j++)
             {
-                if (node::hammingDistance(clique[i], clique[j]) < d)
+                if (hammingDistance(clique[i], clique[j]) < d)
                 {
                     return false;
                 }
@@ -189,7 +156,7 @@ public:
         return true;
     }
 
-    bool checkMaxmialClique(std::vector<node> clique, unsigned int d)
+    bool checkMaxmialClique(std::vector<unsigned int> clique, unsigned int d)
     {
         for (unsigned int i = 0; i < nodes.size(); i++)
         {
@@ -218,7 +185,7 @@ public:
     void findMaximalCliqueWorstBF(const unsigned int d)
     {
         // Generate all possible subsets of nodes
-        std::vector<std::vector<node>> subsets = getSubsets(nodes);
+        std::vector<std::vector<unsigned int>> subsets = getSubsets(nodes);
 
         // Remove all subsets that are not cliques
         for (unsigned int i = 0; i < subsets.size(); i++)
@@ -267,19 +234,19 @@ public:
 
     void findMaximalCliqueBetterBF(const unsigned int d)
     {
-        std::vector<std::vector<node>> clique;
+        std::vector<std::vector<unsigned int>> clique;
 
         // Find all Cliques
         for (unsigned int i = 0; i < nodes.size(); i++)
         {
-            clique.push_back(std::vector<node>());
+            clique.push_back(std::vector<unsigned int>());
             clique[i].push_back(nodes[i]);
             for (unsigned int j = 0; j < nodes.size(); j++)
             {
                 bool canAdd = true;
                 for (unsigned int k = 0; k < clique[i].size(); k++)
                 {
-                    if (node::hammingDistance(nodes[j], clique[i][k]) < d)
+                    if (hammingDistance(nodes[j], clique[i][k]) < d)
                     {
                         canAdd = false;
                         break;
