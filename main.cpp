@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <chrono>
 
 std::string binaryRep(const unsigned int bit, const unsigned int bitlength)
 {
@@ -229,7 +230,6 @@ public:
         // std::cout << "Maximum Clique Count: " << count << std::endl;
 
         std::cout << "Maximum Clique Size: " << max << std::endl;
-
     }
 
     void findMaximalCliqueBetterBF(const unsigned int d)
@@ -283,13 +283,83 @@ public:
         // std::cout << "Maximum Clique Count: " << count << std::endl;
 
         std::cout << "Maximum Clique Size: " << max << std::endl;
-        
+    }
+
+    void findMaximalCliqueBronKerboschSimple(const unsigned int d)
+    {
+        std::vector<unsigned int> R;
+        std::vector<unsigned int> P = nodes;
+        std::vector<unsigned int> X;
+        std::vector<std::vector<unsigned int>> maximalCliques;
+
+        findMaximalCliqueBronKerboschSimple(R, P, X, d, maximalCliques);
+
+        unsigned int max = 0;
+        for (unsigned int i = 0; i < maximalCliques.size(); i++)
+        {
+            if (maximalCliques[i].size() > max)
+            {
+                max = maximalCliques[i].size();
+            }
+        }
+
+        // unsigned int count = 0;
+        // for (unsigned int i = 0; i < maximalCliques.size(); i++)
+        // {
+        //     if (maximalCliques[i].size() == max)
+        //     {
+        //         count++;
+        //     }
+        // }
+
+        // std::cout << "Maximal Clique Count: " << maximalCliques.size() << std::endl;
+        // std::cout << "Maximum Clique Count: " << count << std::endl;
+
+        std::cout << "Maximum Clique Size: " << max << std::endl; 
+    }
+
+    void findMaximalCliqueBronKerboschSimple(std::vector<unsigned int> R, std::vector<unsigned int> P, std::vector<unsigned int> X, const unsigned int d, std::vector<std::vector<unsigned int>> maximalCliques)
+    {
+        if (P.empty() && X.empty())
+        {
+            maximalCliques.push_back(R);
+        }
+        else
+        {
+            for (unsigned int i = 0; i < P.size(); i++)
+            {
+                std::vector<unsigned int> newR = R;
+                newR.push_back(P[i]);
+
+                std::vector<unsigned int> newP;
+                for (unsigned int j = 0; j < P.size(); j++)
+                {
+                    if (j != i)
+                    {
+                        newP.push_back(P[j]);
+                    }
+                }
+
+                std::vector<unsigned int> newX;
+                for (unsigned int j = 0; j < X.size(); j++)
+                {
+                    if (j != i)
+                    {
+                        newX.push_back(X[j]);
+                    }
+                }
+
+                findMaximalCliqueBronKerboschSimple(newR, newP, newX, d, maximalCliques);
+            }
+        }
     }
 };
 
 void findMaximalClique(const unsigned int n, const unsigned int d, const unsigned int m)
 {
     graph g(n);
+
+    auto start = std::chrono::high_resolution_clock::now();
 
     if (m == 0)
     {
@@ -299,6 +369,21 @@ void findMaximalClique(const unsigned int n, const unsigned int d, const unsigne
     {
         g.findMaximalCliqueBetterBF(d);
     }
+    else if (m == 2)
+    {
+        g.findMaximalCliqueBronKerboschSimple(d);
+    }
+    else
+    {
+        std::cout << "Invalid method." << std::endl;
+    }
+
+    auto end = std::chrono::high_resolution_clock::now();
+
+    std::chrono::duration<double> elapsed = end - start;
+
+    std::cout << "Elapsed Time: " << elapsed.count() << "s" << std::endl;
+
 }
 
 int main()
@@ -308,6 +393,7 @@ int main()
     std::cout << "Enter m for the method to use." << std::endl;
     std::cout << "Enter 0 for worst brute force." << std::endl;
     std::cout << "Enter 1 for better brute force." << std::endl;
+    std::cout << "Enter 2 for Bron-Kerbosch." << std::endl;
     std::cout << "Enter unvalid numbers to exit." << std::endl;
 
     while (true)
@@ -336,7 +422,7 @@ int main()
         std::cout << "Enter m: ";
         std::getline(std::cin, temp);
 
-        if (stoi(temp) < 0 || stoi(temp) > 1)
+        if (stoi(temp) < 0 || stoi(temp) > 2)
         {
             break;
         }
