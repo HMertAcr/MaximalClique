@@ -1,22 +1,24 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <queue>
+#include <algorithm>
 #include <chrono>
 
-std::string binaryRep(const unsigned int bit, const unsigned int bitlength)
+std::string binaryRep(const uint32_t bit, const uint32_t bitlength)
 {
     std::string s;
     s.reserve(bitlength);
     s = "";
 
-    for (unsigned int i = 0; i < bitlength; i++)
+    for (uint32_t i = 0; i < bitlength; i++)
     {
         s = ((bit & (1 << i)) ? "1" : "0") + s;
     }
     return s;
 }
 
-static unsigned int hammingDistance(const unsigned int bit_a, const unsigned int bit_b)
+uint32_t hammingDistance(const uint32_t bit_a, const uint32_t bit_b)
 {
     int diff = bit_a ^ bit_b;
     int count = 0;
@@ -33,8 +35,8 @@ static unsigned int hammingDistance(const unsigned int bit_a, const unsigned int
 class graph
 {
 public:
-    std::vector<unsigned int> nodes;
-    unsigned int bitlength;
+    std::vector<uint32_t> nodes;
+    uint32_t bitlength;
 
     // Default constructor
     graph()
@@ -42,11 +44,11 @@ public:
     }
 
     // Constructor
-    graph(unsigned int bitlength)
+    graph(uint32_t bitlength)
     {
         this->bitlength = bitlength;
 
-        for (unsigned int i = 0; i < (1 << bitlength); i++)
+        for (uint32_t i = 0; i < (1 << bitlength); i++)
         {
             nodes.push_back(i);
         }
@@ -65,17 +67,17 @@ public:
         nodes.clear();
     }
 
-    static bool isSameNodes(std::vector<unsigned int> nodes_a, std::vector<unsigned int> nodes_b)
+    static bool isSameNodes(std::vector<uint32_t> nodes_a, std::vector<uint32_t> nodes_b)
     {
         if (nodes_a.size() != nodes_b.size())
         {
             return false;
         }
 
-        for (unsigned int i = 0; i < nodes_a.size(); i++)
+        for (uint32_t i = 0; i < nodes_a.size(); i++)
         {
             bool found = false;
-            for (unsigned int j = 0; j < nodes_b.size(); j++)
+            for (uint32_t j = 0; j < nodes_b.size(); j++)
             {
                 if (nodes_a[i] == nodes_b[j])
                 {
@@ -93,15 +95,15 @@ public:
         return true;
     }
 
-    static void removeDuplicateNodes(std::vector<std::vector<unsigned int>> &nodes)
+    static void removeDuplicateNodes(std::vector<std::vector<uint32_t>> &nodes)
     {
 
-        std::vector<std::vector<unsigned int>> newNodes;
+        std::vector<std::vector<uint32_t>> newNodes;
 
-        for (unsigned int i = 0; i < nodes.size(); i++)
+        for (uint32_t i = 0; i < nodes.size(); i++)
         {
             bool found = false;
-            for (unsigned int j = 0; j < newNodes.size(); j++)
+            for (uint32_t j = 0; j < newNodes.size(); j++)
             {
                 if (isSameNodes(nodes[i], newNodes[j]))
                 {
@@ -118,16 +120,16 @@ public:
         nodes = newNodes;
     }
 
-    std::vector<std::vector<unsigned int>> getSubsets(std::vector<unsigned int> &nums)
+    std::vector<std::vector<uint32_t>> getSubsets(std::vector<uint32_t> &nums)
     {
 
-        std::vector<std::vector<unsigned int>> subset;
-        std::vector<unsigned int> empty;
+        std::vector<std::vector<uint32_t>> subset;
+        std::vector<uint32_t> empty;
         subset.push_back(empty);
 
         for (int i = 0; i < nums.size(); i++)
         {
-            std::vector<std::vector<unsigned int>> subsetTemp = subset;
+            std::vector<std::vector<uint32_t>> subsetTemp = subset;
 
             for (int j = 0; j < subsetTemp.size(); j++)
             {
@@ -142,11 +144,11 @@ public:
         return subset;
     }
 
-    bool checkClique(std::vector<unsigned int> clique, unsigned int d)
+    bool checkClique(std::vector<uint32_t> clique, uint32_t d)
     {
-        for (unsigned int i = 0; i < clique.size(); i++)
+        for (uint32_t i = 0; i < clique.size(); i++)
         {
-            for (unsigned int j = i + 1; j < clique.size(); j++)
+            for (uint32_t j = i + 1; j < clique.size(); j++)
             {
                 if (hammingDistance(clique[i], clique[j]) < d)
                 {
@@ -157,12 +159,12 @@ public:
         return true;
     }
 
-    bool checkMaxmialClique(std::vector<unsigned int> clique, unsigned int d)
+    bool checkMaxmialClique(std::vector<uint32_t> clique, uint32_t d)
     {
-        for (unsigned int i = 0; i < nodes.size(); i++)
+        for (uint32_t i = 0; i < nodes.size(); i++)
         {
             bool found = false;
-            for (unsigned int j = 0; j < clique.size(); j++)
+            for (uint32_t j = 0; j < clique.size(); j++)
             {
                 if (nodes[i] == clique[j])
                 {
@@ -183,13 +185,11 @@ public:
         return true;
     }
 
-    void findMaximalCliqueWorstBF(const unsigned int d)
+    uint32_t findMaximalCliqueWorstBF(const uint32_t d)
     {
-        // Generate all possible subsets of nodes
-        std::vector<std::vector<unsigned int>> subsets = getSubsets(nodes);
+        std::vector<std::vector<uint32_t>> subsets = getSubsets(nodes);
 
-        // Remove all subsets that are not cliques
-        for (unsigned int i = 0; i < subsets.size(); i++)
+        for (uint32_t i = 0; i < subsets.size(); i++)
         {
             if (!checkClique(subsets[i], d))
             {
@@ -198,8 +198,7 @@ public:
             }
         }
 
-        // Remove all subsets that are not maximal cliques
-        for (unsigned int i = 0; i < subsets.size(); i++)
+        for (uint32_t i = 0; i < subsets.size(); i++)
         {
             if (!checkMaxmialClique(subsets[i], d))
             {
@@ -208,8 +207,8 @@ public:
             }
         }
 
-        unsigned int max = 0;
-        for (unsigned int i = 0; i < subsets.size(); i++)
+        uint32_t max = 0;
+        for (uint32_t i = 0; i < subsets.size(); i++)
         {
             if (subsets[i].size() > max)
             {
@@ -217,34 +216,21 @@ public:
             }
         }
 
-        // unsigned int count = 0;
-        // for (unsigned int i = 0; i < subsets.size(); i++)
-        // {
-        //     if (subsets[i].size() == max)
-        //     {
-        //         count++;
-        //     }
-        // }
-
-        // std::cout << "Maximal Clique Count: " << subsets.size() << std::endl;
-        // std::cout << "Maximum Clique Count: " << count << std::endl;
-
-        std::cout << "Maximum Clique Size: " << max << std::endl;
+        return max;
     }
 
-    void findMaximalCliqueBetterBF(const unsigned int d)
+    uint32_t findMaximalCliqueBetterBF(const uint32_t d)
     {
-        std::vector<std::vector<unsigned int>> clique;
+        std::vector<std::vector<uint32_t>> clique;
 
-        // Find all Cliques
-        for (unsigned int i = 0; i < nodes.size(); i++)
+        for (uint32_t i = 0; i < nodes.size(); i++)
         {
-            clique.push_back(std::vector<unsigned int>());
+            clique.push_back(std::vector<uint32_t>());
             clique[i].push_back(nodes[i]);
-            for (unsigned int j = 0; j < nodes.size(); j++)
+            for (uint32_t j = 0; j < nodes.size(); j++)
             {
                 bool canAdd = true;
-                for (unsigned int k = 0; k < clique[i].size(); k++)
+                for (uint32_t k = 0; k < clique[i].size(); k++)
                 {
                     if (hammingDistance(nodes[j], clique[i][k]) < d)
                     {
@@ -261,8 +247,8 @@ public:
 
         graph::removeDuplicateNodes(clique);
 
-        unsigned int max = 0;
-        for (unsigned int i = 0; i < clique.size(); i++)
+        uint32_t max = 0;
+        for (uint32_t i = 0; i < clique.size(); i++)
         {
             if (clique[i].size() > max)
             {
@@ -270,32 +256,20 @@ public:
             }
         }
 
-        // unsigned int count = 0;
-        // for (unsigned int i = 0; i < clique.size(); i++)
-        // {
-        //     if (clique[i].size() == max)
-        //     {
-        //         count++;
-        //     }
-        // }
-
-        // std::cout << "Maximal Clique Count: " << clique.size() << std::endl;
-        // std::cout << "Maximum Clique Count: " << count << std::endl;
-
-        std::cout << "Maximum Clique Size: " << max << std::endl;
+        return max;
     }
 
-    void findMaximalCliqueBronKerboschSimple(const unsigned int d)
+    uint32_t findMaximalCliqueBronKerboschSimple(const uint32_t d)
     {
-        std::vector<unsigned int> R;
-        std::vector<unsigned int> P = nodes;
-        std::vector<unsigned int> X;
-        std::vector<std::vector<unsigned int>> maximalCliques;
+        std::vector<uint32_t> R;
+        std::vector<uint32_t> P = nodes;
+        std::vector<uint32_t> X;
+        std::vector<std::vector<uint32_t>> maximalCliques;
 
         findMaximalCliqueBronKerboschSimple(R, P, X, d, maximalCliques);
 
-        unsigned int max = 0;
-        for (unsigned int i = 0; i < maximalCliques.size(); i++)
+        uint32_t max = 0;
+        for (uint32_t i = 0; i < maximalCliques.size(); i++)
         {
             if (maximalCliques[i].size() > max)
             {
@@ -303,22 +277,10 @@ public:
             }
         }
 
-        // unsigned int count = 0;
-        // for (unsigned int i = 0; i < maximalCliques.size(); i++)
-        // {
-        //     if (maximalCliques[i].size() == max)
-        //     {
-        //         count++;
-        //     }
-        // }
-
-        // std::cout << "Maximal Clique Count: " << maximalCliques.size() << std::endl;
-        // std::cout << "Maximum Clique Count: " << count << std::endl;
-
-        std::cout << "Maximum Clique Size: " << max << std::endl;
+        return max;
     }
 
-    void findMaximalCliqueBronKerboschSimple(std::vector<unsigned int> R, std::vector<unsigned int> P, std::vector<unsigned int> X, const unsigned int d, std::vector<std::vector<unsigned int>> &maximalCliques)
+    void findMaximalCliqueBronKerboschSimple(std::vector<uint32_t> R, std::vector<uint32_t> P, std::vector<uint32_t> X, const uint32_t d, std::vector<std::vector<uint32_t>> &maximalCliques)
     {
         if (P.empty() && X.empty())
         {
@@ -326,20 +288,20 @@ public:
         }
         else
         {
-            for (unsigned int i = 0; i < P.size(); i++)
+            for (uint32_t i = 0; i < P.size(); i++)
             {
-                std::vector<unsigned int> newR = R;
+                std::vector<uint32_t> newR = R;
                 newR.push_back(P[i]);
-                std::vector<unsigned int> newP;
-                std::vector<unsigned int> newX;
-                for (unsigned int j = 0; j < P.size(); j++)
+                std::vector<uint32_t> newP;
+                std::vector<uint32_t> newX;
+                for (uint32_t j = 0; j < P.size(); j++)
                 {
                     if (hammingDistance(P[i], P[j]) >= d)
                     {
                         newP.push_back(P[j]);
                     }
                 }
-                for (unsigned int j = 0; j < X.size(); j++)
+                for (uint32_t j = 0; j < X.size(); j++)
                 {
                     if (hammingDistance(P[i], X[j]) >= d)
                     {
@@ -347,7 +309,7 @@ public:
                     }
                 }
                 findMaximalCliqueBronKerboschSimple(newR, newP, newX, d, maximalCliques);
-                for (unsigned int j = 0; j < P.size(); j++)
+                for (uint32_t j = 0; j < P.size(); j++)
                 {
                     if (P[i] == P[j])
                     {
@@ -360,17 +322,17 @@ public:
         }
     }
 
-    void findMaximalCliqueBronKerboschPivot(const unsigned int d)
+    uint32_t findMaximalCliqueBronKerboschPivot(const uint32_t d)
     {
-        std::vector<unsigned int> R;
-        std::vector<unsigned int> P = nodes;
-        std::vector<unsigned int> X;
-        std::vector<std::vector<unsigned int>> maximalCliques;
+        std::vector<uint32_t> R;
+        std::vector<uint32_t> P = nodes;
+        std::vector<uint32_t> X;
+        std::vector<std::vector<uint32_t>> maximalCliques;
 
         findMaximalCliqueBronKerboschPivot(R, P, X, d, maximalCliques);
 
-        unsigned int max = 0;
-        for (unsigned int i = 0; i < maximalCliques.size(); i++)
+        uint32_t max = 0;
+        for (uint32_t i = 0; i < maximalCliques.size(); i++)
         {
             if (maximalCliques[i].size() > max)
             {
@@ -378,46 +340,46 @@ public:
             }
         }
 
-        // unsigned int count = 0;
-        // for (unsigned int i = 0; i < maximalCliques.size(); i++)
-        // {
-        //     if (maximalCliques[i].size() == max)
-        //     {
-        //         count++;
-        //     }
-        // }
-
-        // std::cout << "Maximal Clique Count: " << maximalCliques.size() << std::endl;
-        // std::cout << "Maximum Clique Count: " << count << std::endl;
-
-        std::cout << "Maximum Clique Size: " << max << std::endl;
+        return max;
     }
 
-    void findMaximalCliqueBronKerboschPivot(std::vector<unsigned int> R, std::vector<unsigned int> P, std::vector<unsigned int> X, const unsigned int d, std::vector<std::vector<unsigned int>> &maximalCliques)
+    uint32_t findMaximalCliqueBronKerboschPivot(std::vector<uint32_t> R, std::vector<uint32_t> P, std::vector<uint32_t> X, const uint32_t d, std::vector<std::vector<uint32_t>> &maximalCliques)
     {
-        //TODO
+        // TODO
+        return 0;
+    }
+
+    uint32_t findMaximalCliqueLexicographicBFS(const uint32_t d)
+    {
+        // TODO
+        return 0;
     }
 };
 
-void findMaximalClique(const unsigned int n, const unsigned int d, const unsigned int m)
+void findMaximalClique(const uint32_t n, const uint32_t d, const uint32_t m)
 {
     graph g(n);
 
     auto start = std::chrono::high_resolution_clock::now();
 
+    uint32_t max = 0;
+
     switch (m)
     {
     case 0:
-        g.findMaximalCliqueWorstBF(d);
+        max = g.findMaximalCliqueWorstBF(d);
         break;
     case 1:
-        g.findMaximalCliqueBetterBF(d);
+        max = g.findMaximalCliqueBetterBF(d);
         break;
     case 2:
-        g.findMaximalCliqueBronKerboschSimple(d);
+        max = g.findMaximalCliqueBronKerboschSimple(d);
         break;
     case 3:
-        g.findMaximalCliqueBronKerboschPivot(d);
+        max = g.findMaximalCliqueBronKerboschPivot(d);
+        break;
+    case 4:
+        max = g.findMaximalCliqueLexicographicBFS(d);
         break;
     }
 
@@ -425,6 +387,7 @@ void findMaximalClique(const unsigned int n, const unsigned int d, const unsigne
 
     std::chrono::duration<double> elapsed = end - start;
 
+    std::cout << "Maximum Clique Size: " << max << std::endl;
     std::cout << "Elapsed Time: " << elapsed.count() << "s" << std::endl;
 }
 
@@ -437,6 +400,7 @@ int main()
     std::cout << "Enter 1 for better brute force." << std::endl;
     std::cout << "Enter 2 for Simple Bron-Kerbosch." << std::endl;
     std::cout << "Enter 3 for Pivot Bron-Kerbosch." << std::endl;
+    std::cout << "Enter 4 for Lexicographical Breadth-First Search." << std::endl;
     std::cout << "Enter unvalid numbers to exit." << std::endl;
 
     while (true)
@@ -451,7 +415,7 @@ int main()
         {
             break;
         }
-        unsigned int n = stoi(temp);
+        uint32_t n = stoi(temp);
 
         std::cout << "Enter d: ";
         std::getline(std::cin, temp);
@@ -460,16 +424,16 @@ int main()
         {
             break;
         }
-        unsigned int d = stoi(temp);
+        uint32_t d = stoi(temp);
 
         std::cout << "Enter m: ";
         std::getline(std::cin, temp);
 
-        if (stoi(temp) < 0 || stoi(temp) > 3)
+        if (stoi(temp) < 0 || stoi(temp) > 4)
         {
             break;
         }
-        unsigned int m = stoi(temp);
+        uint32_t m = stoi(temp);
 
         findMaximalClique(n, d, m);
     }
