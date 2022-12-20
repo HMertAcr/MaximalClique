@@ -349,10 +349,70 @@ public:
         return 0;
     }
 
+    // TODO speed up by implementing an adjacency list that calculates adjacencies with dynamic programming and not brute force
+
     uint32_t findMaximalCliqueLexicographicBFS(const uint32_t d)
     {
-        // TODO
-        return 0;
+        std::vector<std::vector<uint32_t>> cliques;
+        std::vector<uint32_t> visited(nodes.size(), 0);
+        std::vector<uint32_t> current_clique;
+        uint32_t start = 0;
+        std::vector<uint32_t> queue = {start};
+        visited[start] = 1;
+        current_clique.push_back(start);
+        while (!queue.empty())
+        {
+            uint32_t current = queue.back();
+            queue.pop_back();
+            for (int i = 0; i < nodes.size(); i++)
+            {
+                if (visited[i] == 0 && hammingDistance(current, nodes[i]) >= d)
+                {
+                    bool is_connected_to_all = true;
+                    for (const uint32_t &node : current_clique)
+                    {
+                        if (hammingDistance(nodes[i], node) < d)
+                        {
+                            is_connected_to_all = false;
+                            break;
+                        }
+                    }
+                    if (is_connected_to_all)
+                    {
+                        visited[i] = 1;
+                        current_clique.push_back(nodes[i]);
+                        queue.push_back(nodes[i]);
+                    }
+                }
+            }
+            if (queue.empty())
+            {
+                cliques.push_back(current_clique);
+                current_clique.clear();
+                for (int i = 0; i < nodes.size(); i++)
+                {
+                    if (visited[i] == 0)
+                    {
+                        queue.push_back(i);
+                        visited[i] = 1;
+                        current_clique.push_back(nodes[i]);
+                        break;
+                    }
+                }
+            }
+        }
+
+        uint32_t max = 0;
+
+        for (int i = 0; i < cliques.size(); i++)
+        {
+            if (cliques[i].size() > max)
+            {
+                max = cliques[i].size();
+            }
+        }
+
+        return max;
     }
 };
 
