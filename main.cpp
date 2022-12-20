@@ -185,7 +185,7 @@ public:
         return true;
     }
 
-    uint32_t findMaximalCliqueWorstBF(const uint32_t d)
+    uint32_t findMaximalCliqueBruteForce(const uint32_t d)
     {
         std::vector<std::vector<uint32_t>> subsets = getSubsets(nodes);
 
@@ -219,7 +219,7 @@ public:
         return max;
     }
 
-    uint32_t findMaximalCliqueBetterBF(const uint32_t d)
+    uint32_t findMaximalCliqueApprox(const uint32_t d)
     {
         std::vector<std::vector<uint32_t>> clique;
 
@@ -253,6 +253,71 @@ public:
             if (clique[i].size() > max)
             {
                 max = clique[i].size();
+            }
+        }
+
+        return max;
+    }
+
+    // TODO speed up by implementing an adjacency list that calculates adjacencies with dynamic programming and not brute force
+    uint32_t findMaximalCliqueLexicographicBFS(const uint32_t d)
+    {
+        std::vector<std::vector<uint32_t>> cliques;
+        std::vector<uint32_t> visited(nodes.size(), 0);
+        std::vector<uint32_t> current_clique;
+        uint32_t start = 0;
+        std::vector<uint32_t> queue = {start};
+        visited[start] = 1;
+        current_clique.push_back(start);
+        while (!queue.empty())
+        {
+            uint32_t current = queue.back();
+            queue.pop_back();
+            for (int i = 0; i < nodes.size(); i++)
+            {
+                if (visited[i] == 0 && hammingDistance(current, nodes[i]) >= d)
+                {
+                    bool is_connected_to_all = true;
+                    for (const uint32_t &node : current_clique)
+                    {
+                        if (hammingDistance(nodes[i], node) < d)
+                        {
+                            is_connected_to_all = false;
+                            break;
+                        }
+                    }
+                    if (is_connected_to_all)
+                    {
+                        visited[i] = 1;
+                        current_clique.push_back(nodes[i]);
+                        queue.push_back(nodes[i]);
+                    }
+                }
+            }
+            if (queue.empty())
+            {
+                cliques.push_back(current_clique);
+                current_clique.clear();
+                for (int i = 0; i < nodes.size(); i++)
+                {
+                    if (visited[i] == 0)
+                    {
+                        queue.push_back(i);
+                        visited[i] = 1;
+                        current_clique.push_back(nodes[i]);
+                        break;
+                    }
+                }
+            }
+        }
+
+        uint32_t max = 0;
+
+        for (int i = 0; i < cliques.size(); i++)
+        {
+            if (cliques[i].size() > max)
+            {
+                max = cliques[i].size();
             }
         }
 
@@ -348,72 +413,6 @@ public:
         // TODO
         return 0;
     }
-
-    // TODO speed up by implementing an adjacency list that calculates adjacencies with dynamic programming and not brute force
-
-    uint32_t findMaximalCliqueLexicographicBFS(const uint32_t d)
-    {
-        std::vector<std::vector<uint32_t>> cliques;
-        std::vector<uint32_t> visited(nodes.size(), 0);
-        std::vector<uint32_t> current_clique;
-        uint32_t start = 0;
-        std::vector<uint32_t> queue = {start};
-        visited[start] = 1;
-        current_clique.push_back(start);
-        while (!queue.empty())
-        {
-            uint32_t current = queue.back();
-            queue.pop_back();
-            for (int i = 0; i < nodes.size(); i++)
-            {
-                if (visited[i] == 0 && hammingDistance(current, nodes[i]) >= d)
-                {
-                    bool is_connected_to_all = true;
-                    for (const uint32_t &node : current_clique)
-                    {
-                        if (hammingDistance(nodes[i], node) < d)
-                        {
-                            is_connected_to_all = false;
-                            break;
-                        }
-                    }
-                    if (is_connected_to_all)
-                    {
-                        visited[i] = 1;
-                        current_clique.push_back(nodes[i]);
-                        queue.push_back(nodes[i]);
-                    }
-                }
-            }
-            if (queue.empty())
-            {
-                cliques.push_back(current_clique);
-                current_clique.clear();
-                for (int i = 0; i < nodes.size(); i++)
-                {
-                    if (visited[i] == 0)
-                    {
-                        queue.push_back(i);
-                        visited[i] = 1;
-                        current_clique.push_back(nodes[i]);
-                        break;
-                    }
-                }
-            }
-        }
-
-        uint32_t max = 0;
-
-        for (int i = 0; i < cliques.size(); i++)
-        {
-            if (cliques[i].size() > max)
-            {
-                max = cliques[i].size();
-            }
-        }
-
-        return max;
-    }
 };
 
 void findMaximalClique(const uint32_t n, const uint32_t d, const uint32_t m)
@@ -426,20 +425,20 @@ void findMaximalClique(const uint32_t n, const uint32_t d, const uint32_t m)
 
     switch (m)
     {
-    case 0:
-        max = g.findMaximalCliqueWorstBF(d);
-        break;
     case 1:
-        max = g.findMaximalCliqueBetterBF(d);
+        max = g.findMaximalCliqueBruteForce(d);
         break;
     case 2:
-        max = g.findMaximalCliqueBronKerboschSimple(d);
+        max = g.findMaximalCliqueApprox(d);
         break;
     case 3:
-        max = g.findMaximalCliqueBronKerboschPivot(d);
+        max = g.findMaximalCliqueLexicographicBFS(d);
         break;
     case 4:
-        max = g.findMaximalCliqueLexicographicBFS(d);
+        max = g.findMaximalCliqueBronKerboschSimple(d);
+        break;
+    case 5:
+        max = g.findMaximalCliqueBronKerboschPivot(d);
         break;
     }
 
@@ -456,11 +455,11 @@ int main()
 
     std::cout << "Enter n and d to find the maximal clique of a graph with n nodes and d distance." << std::endl;
     std::cout << "Enter m for the method to use." << std::endl;
-    std::cout << "Enter 0 for brute force." << std::endl;
-    std::cout << "Enter 1 for approximation." << std::endl;
-    std::cout << "Enter 2 for Simple Bron-Kerbosch." << std::endl;
-    std::cout << "Enter 3 for Pivot Bron-Kerbosch." << std::endl;
-    std::cout << "Enter 4 for Lexicographical Breadth-First Search." << std::endl;
+    std::cout << "Enter 1 for brute force." << std::endl;
+    std::cout << "Enter 2 for approximation." << std::endl;
+    std::cout << "Enter 3 for Lexicographical Breadth-First Search." << std::endl;
+    std::cout << "Enter 4 for Simple Bron-Kerbosch." << std::endl;
+    std::cout << "Enter 5 for Pivot Bron-Kerbosch." << std::endl;
     std::cout << "Enter unvalid numbers to exit." << std::endl;
 
     while (true)
@@ -489,7 +488,7 @@ int main()
         std::cout << "Enter m: ";
         std::getline(std::cin, temp);
 
-        if (stoi(temp) < 0 || stoi(temp) > 4)
+        if (stoi(temp) < 1 || stoi(temp) > 5)
         {
             break;
         }
