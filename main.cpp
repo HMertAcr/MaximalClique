@@ -456,8 +456,8 @@ int main()
 
     std::cout << "Enter n and d to find the maximal clique of a graph with n nodes and d distance." << std::endl;
     std::cout << "Enter m for the method to use." << std::endl;
-    std::cout << "Enter 0 for worst brute force." << std::endl;
-    std::cout << "Enter 1 for better brute force." << std::endl;
+    std::cout << "Enter 0 for brute force." << std::endl;
+    std::cout << "Enter 1 for approximation." << std::endl;
     std::cout << "Enter 2 for Simple Bron-Kerbosch." << std::endl;
     std::cout << "Enter 3 for Pivot Bron-Kerbosch." << std::endl;
     std::cout << "Enter 4 for Lexicographical Breadth-First Search." << std::endl;
