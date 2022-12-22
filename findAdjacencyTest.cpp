@@ -36,17 +36,41 @@ std::vector<uint32_t> findAdjacency(uint32_t d, uint32_t number, uint32_t bitlen
     return adjacency;
 }
 
+std::vector<uint32_t> findAdjacencyBrute(uint32_t d, uint32_t number, uint32_t bitlength)
+{
+    std::vector<uint32_t> adjacency;
+    uint32_t m = (1 << bitlength);
+    for (uint32_t i = 0; i < m; i++)
+    {
+        uint32_t distance = hammingDistance(number, i);
+        if (distance >= d)
+        {
+            adjacency.push_back(i);
+        }
+    }
+}
+
 int main()
 {
     uint32_t d = 4;
     uint32_t bitlength = 5;
     uint32_t number = 0;
-    std::vector<uint32_t> adjacency = findAdjacency(d, number, bitlength);
 
+    std::vector<uint32_t> adjacency = findAdjacency(d, number, bitlength);
+    std::cout << "Test" << std::endl;
     for (uint32_t i = 0; i < adjacency.size(); i++)
     {
         std::cout << binaryRep(adjacency[i], bitlength) << std::endl;
     }
+    std::cout << std::endl;
+
+    std::vector<uint32_t> adjacencyBrute = findAdjacencyBrute(d, number, bitlength);
+    std::cout<< "Brute force: " << std::endl;
+    for (uint32_t i = 0; i < adjacencyBrute.size(); i++)
+    {
+        std::cout << binaryRep(adjacencyBrute[i], bitlength) << std::endl;
+    }
+    std::cout << std::endl;
 
     return 0;
 }

@@ -33,3 +33,4 @@
 
 # Debug files
 .vscode/tasks.json
+.vscode/settings.json

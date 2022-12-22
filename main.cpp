@@ -185,7 +185,8 @@ public:
 
         return max;
     }
-
+    
+    //deleted
     uint32_t findMaximalCliqueApprox(const uint32_t d)
     {
         std::vector<std::vector<uint32_t>> clique;
@@ -228,7 +229,7 @@ public:
     }
 
     // TODO speed up by implementing an adjacency list that calculates adjacencies with dynamic programming and not brute force
-    uint32_t findMaximalCliqueLexicographicBFS(const uint32_t d)
+    uint32_t findMaximalCliqueHeuristicBFS(const uint32_t d)
     {
         std::vector<std::vector<uint32_t>> cliques;
         std::vector<uint32_t> visited(nodes.size(), 0);
@@ -398,15 +399,12 @@ void findMaximalClique(const uint32_t n, const uint32_t d, const uint32_t m)
         max = g.findMaximalCliqueBruteForce(d);
         break;
     case 2:
-        max = g.findMaximalCliqueApprox(d);
+        max = g.findMaximalCliqueHeuristicBFS(d);
         break;
     case 3:
-        max = g.findMaximalCliqueLexicographicBFS(d);
-        break;
-    case 4:
         max = g.findMaximalCliqueBronKerboschSimple(d);
         break;
-    case 5:
+    case 4:
         max = g.findMaximalCliqueBronKerboschPivot(d);
         break;
     }
@@ -425,10 +423,9 @@ int main()
     std::cout << "Enter n and d to find the maximal clique of a graph with n nodes and d distance." << std::endl;
     std::cout << "Enter m for the method to use." << std::endl;
     std::cout << "Enter 1 for brute force." << std::endl;
-    std::cout << "Enter 2 for approximation." << std::endl;
-    std::cout << "Enter 3 for Lexicographical Breadth-First Search." << std::endl;
-    std::cout << "Enter 4 for Simple Bron-Kerbosch." << std::endl;
-    std::cout << "Enter 5 for Pivot Bron-Kerbosch." << std::endl;
+    std::cout << "Enter 2 for Heuristic Breadth-First Search." << std::endl;
+    std::cout << "Enter 3 for Simple Bron-Kerbosch." << std::endl;
+    std::cout << "Enter 4 for Pivot Bron-Kerbosch." << std::endl;
     std::cout << "Enter unvalid numbers to exit." << std::endl;
 
     while (true)
@@ -457,7 +454,7 @@ int main()
         std::cout << "Enter m: ";
         std::getline(std::cin, temp);
 
-        if (stoi(temp) < 1 || stoi(temp) > 5)
+        if (stoi(temp) < 1 || stoi(temp) > 4)
         {
             break;
         }
