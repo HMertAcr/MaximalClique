@@ -20,16 +20,7 @@ std::string binaryRep(const uint32_t bit, const uint32_t bitlength)
 
 uint32_t hammingDistance(const uint32_t bit_a, const uint32_t bit_b)
 {
-    int diff = bit_a ^ bit_b;
-    int count = 0;
-
-    while (diff != 0)
-    {
-        count++;
-        diff &= diff - 1;
-    }
-
-    return count;
+    return __builtin_popcount(bit_a ^ bit_b);
 }
 
 class graph
