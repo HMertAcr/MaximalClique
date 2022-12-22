@@ -67,9 +67,12 @@ public:
         nodes.clear();
     }
 
-    static bool isSameNodes(std::vector<uint32_t> nodes_a, std::vector<uint32_t> nodes_b)
+    static bool isSameNodes(const std::vector<uint32_t> &nodes_a, const std::vector<uint32_t> &nodes_b)
     {
-        if (nodes_a.size() != nodes_b.size())
+
+        auto tempNodes_b = nodes_b;
+
+        if (nodes_a.size() != tempNodes_b.size())
         {
             return false;
         }
@@ -77,11 +80,11 @@ public:
         for (uint32_t i = 0; i < nodes_a.size(); i++)
         {
             bool found = false;
-            for (uint32_t j = 0; j < nodes_b.size(); j++)
+            for (uint32_t j = 0; j < tempNodes_b.size(); j++)
             {
-                if (nodes_a[i] == nodes_b[j])
+                if (nodes_a[i] == tempNodes_b[j])
                 {
-                    nodes_b.erase(nodes_b.begin() + j);
+                    tempNodes_b.erase(tempNodes_b.begin() + j);
                     found = true;
                     break;
                 }
@@ -97,32 +100,21 @@ public:
 
     static void removeDuplicateNodes(std::vector<std::vector<uint32_t>> &nodes)
     {
-
-        std::vector<std::vector<uint32_t>> newNodes;
-
         for (uint32_t i = 0; i < nodes.size(); i++)
         {
-            bool found = false;
-            for (uint32_t j = 0; j < newNodes.size(); j++)
+            for (uint32_t j = i + 1; j < nodes.size(); j++)
             {
-                if (isSameNodes(nodes[i], newNodes[j]))
+                if (isSameNodes(nodes[i], nodes[j]))
                 {
-                    found = true;
-                    break;
+                    nodes.erase(nodes.begin() + j);
+                    j--;
                 }
             }
-            if (!found)
-            {
-                newNodes.push_back(nodes[i]);
-            }
         }
-
-        nodes = newNodes;
     }
 
-    std::vector<std::vector<uint32_t>> getSubsets(std::vector<uint32_t> &nums)
+    std::vector<std::vector<uint32_t>> getSubsets(const std::vector<uint32_t> &nums)
     {
-
         std::vector<std::vector<uint32_t>> subset;
         std::vector<uint32_t> empty;
         subset.push_back(empty);
@@ -144,7 +136,8 @@ public:
         return subset;
     }
 
-    bool checkClique(std::vector<uint32_t> clique, uint32_t d)
+    // TODO: Optimize with adjacency list
+    bool checkClique(std::vector<uint32_t> &clique, const uint32_t d)
     {
         for (uint32_t i = 0; i < clique.size(); i++)
         {
@@ -159,20 +152,12 @@ public:
         return true;
     }
 
-    bool checkMaxmialClique(std::vector<uint32_t> clique, uint32_t d)
+    // TODO: Optimize with adjacency list
+    bool checkMaxmialClique(std::vector<uint32_t> &clique, const uint32_t d)
     {
         for (uint32_t i = 0; i < nodes.size(); i++)
         {
-            bool found = false;
-            for (uint32_t j = 0; j < clique.size(); j++)
-            {
-                if (nodes[i] == clique[j])
-                {
-                    found = true;
-                    break;
-                }
-            }
-            if (!found)
+            if (std::find(clique.begin(), clique.end(), nodes[i]) == clique.end())
             {
                 clique.push_back(nodes[i]);
                 if (checkClique(clique, d))
@@ -191,16 +176,7 @@ public:
 
         for (uint32_t i = 0; i < subsets.size(); i++)
         {
-            if (!checkClique(subsets[i], d))
-            {
-                subsets.erase(subsets.begin() + i);
-                i--;
-            }
-        }
-
-        for (uint32_t i = 0; i < subsets.size(); i++)
-        {
-            if (!checkMaxmialClique(subsets[i], d))
+            if (!checkClique(subsets[i], d) && !checkMaxmialClique(subsets[i], d))
             {
                 subsets.erase(subsets.begin() + i);
                 i--;
@@ -245,6 +221,7 @@ public:
             }
         }
 
+        //not needed
         graph::removeDuplicateNodes(clique);
 
         uint32_t max = 0;
@@ -417,9 +394,10 @@ public:
 
 void findMaximalClique(const uint32_t n, const uint32_t d, const uint32_t m)
 {
-    graph g(n);
 
     auto start = std::chrono::high_resolution_clock::now();
+
+    graph g(n);
 
     uint32_t max = 0;
 
