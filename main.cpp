@@ -23,10 +23,27 @@ uint32_t hammingDistance(const uint32_t bit_a, const uint32_t bit_b)
     return __builtin_popcount(bit_a ^ bit_b);
 }
 
+std::vector<uint32_t> findAdjacencyBrute(uint32_t d, uint32_t number, uint32_t bitlength)
+{
+    std::vector<uint32_t> adjacency;
+    uint32_t m = (1 << bitlength);
+    for (uint32_t i = 0; i < m; i++)
+    {
+        uint32_t distance = hammingDistance(number, i);
+        if (distance >= d)
+        {
+            adjacency.push_back(i);
+        }
+    }
+    return adjacency;
+}
+
 class graph
 {
 public:
     std::vector<uint32_t> nodes;
+    std::vector<std::vector<uint32_t>> adjacency;
+    uint32_t distance;
     uint32_t bitlength;
 
     // Default constructor
@@ -35,9 +52,10 @@ public:
     }
 
     // Constructor
-    graph(uint32_t bitlength)
+    graph(uint32_t bitlength, uint32_t distance)
     {
         this->bitlength = bitlength;
+        this->distance = distance;
 
         for (uint32_t i = 0; i < (1 << bitlength); i++)
         {
@@ -49,13 +67,32 @@ public:
     graph(const graph &g)
     {
         this->bitlength = g.bitlength;
+        this->distance = g.distance;
         this->nodes = g.nodes;
+        this->adjacency = g.adjacency;
     }
 
     // Destructor
     ~graph()
     {
         nodes.clear();
+        adjacency.clear();
+    }
+
+    void createAdjacency()
+    {
+        adjacency.clear();
+        adjacency.resize(nodes.size());
+
+        for (uint32_t i = 0; i < nodes.size(); i++)
+        {
+            adjacency[i] = findAdjacencyBrute(distance, nodes[i], bitlength);
+        }
+    }
+
+    bool isAdjacent(uint32_t node_a, uint32_t node_b)
+    {
+        return std::find(adjacency[node_a].begin(), adjacency[node_a].end(), node_b) != adjacency[node_a].end();
     }
 
     static bool isSameNodes(const std::vector<uint32_t> &nodes_a, const std::vector<uint32_t> &nodes_b)
@@ -128,13 +165,13 @@ public:
     }
 
     // TODO: Optimize with adjacency list
-    bool checkClique(std::vector<uint32_t> &clique, const uint32_t d)
+    bool checkClique(std::vector<uint32_t> &clique)
     {
         for (uint32_t i = 0; i < clique.size(); i++)
         {
             for (uint32_t j = i + 1; j < clique.size(); j++)
             {
-                if (hammingDistance(clique[i], clique[j]) < d)
+                if (isAdjacent(clique[i], clique[j]))
                 {
                     return false;
                 }
@@ -143,15 +180,14 @@ public:
         return true;
     }
 
-    // TODO: Optimize with adjacency list
-    bool checkMaxmialClique(std::vector<uint32_t> &clique, const uint32_t d)
+    bool checkMaxmialClique(std::vector<uint32_t> &clique)
     {
-        for (uint32_t i = 0; i < nodes.size(); i++)
+        for (const uint32_t &node : adjacency[clique[0]])
         {
-            if (std::find(clique.begin(), clique.end(), nodes[i]) == clique.end())
+            if (std::find(clique.begin(), clique.end(), node) == clique.end())
             {
-                clique.push_back(nodes[i]);
-                if (checkClique(clique, d))
+                clique.push_back(node);
+                if (checkClique(clique))
                 {
                     return false;
                 }
@@ -161,13 +197,15 @@ public:
         return true;
     }
 
-    uint32_t findMaximalCliqueBruteForce(const uint32_t d)
+    uint32_t findMaximalCliqueBruteForce()
     {
         std::vector<std::vector<uint32_t>> subsets = getSubsets(nodes);
 
+        createAdjacency();
+
         for (uint32_t i = 0; i < subsets.size(); i++)
         {
-            if (!checkClique(subsets[i], d) && !checkMaxmialClique(subsets[i], d))
+            if (!checkClique(subsets[i]) && !checkMaxmialClique(subsets[i]))
             {
                 subsets.erase(subsets.begin() + i);
                 i--;
@@ -185,71 +223,30 @@ public:
 
         return max;
     }
-    
-    //deleted
-    uint32_t findMaximalCliqueApprox(const uint32_t d)
-    {
-        std::vector<std::vector<uint32_t>> clique;
 
-        for (uint32_t i = 0; i < nodes.size(); i++)
-        {
-            clique.push_back(std::vector<uint32_t>());
-            clique[i].push_back(nodes[i]);
-            for (uint32_t j = 0; j < nodes.size(); j++)
-            {
-                bool canAdd = true;
-                for (uint32_t k = 0; k < clique[i].size(); k++)
-                {
-                    if (hammingDistance(nodes[j], clique[i][k]) < d)
-                    {
-                        canAdd = false;
-                        break;
-                    }
-                }
-                if (canAdd)
-                {
-                    clique[i].push_back(nodes[j]);
-                }
-            }
-        }
-
-        //not needed
-        graph::removeDuplicateNodes(clique);
-
-        uint32_t max = 0;
-        for (uint32_t i = 0; i < clique.size(); i++)
-        {
-            if (clique[i].size() > max)
-            {
-                max = clique[i].size();
-            }
-        }
-
-        return max;
-    }
-
-    // TODO speed up by implementing an adjacency list that calculates adjacencies with dynamic programming and not brute force
-    uint32_t findMaximalCliqueHeuristicBFS(const uint32_t d)
+    uint32_t findMaximalCliqueHeuristicBFS()
     {
         std::vector<std::vector<uint32_t>> cliques;
         std::vector<uint32_t> visited(nodes.size(), 0);
         std::vector<uint32_t> current_clique;
-        uint32_t start = 0;
-        std::vector<uint32_t> queue = {start};
-        visited[start] = 1;
-        current_clique.push_back(start);
+        std::vector<uint32_t> queue = {0};
+        visited[0] = 1;
+        current_clique.push_back(nodes[0]);
+
+        createAdjacency();
+
         while (!queue.empty())
         {
-            uint32_t current = queue.back();
-            queue.pop_back();
-            for (int i = 0; i < nodes.size(); i++)
+            uint32_t current = queue.front();
+            queue.erase(queue.begin());
+            for (int i : adjacency[current])
             {
-                if (visited[i] == 0 && hammingDistance(current, nodes[i]) >= d)
+                if (visited[i] == 0)
                 {
                     bool is_connected_to_all = true;
                     for (const uint32_t &node : current_clique)
                     {
-                        if (hammingDistance(nodes[i], node) < d)
+                        if (!isAdjacent(nodes[i], node))
                         {
                             is_connected_to_all = false;
                             break;
@@ -259,24 +256,70 @@ public:
                     {
                         visited[i] = 1;
                         current_clique.push_back(nodes[i]);
-                        queue.push_back(nodes[i]);
+                        queue.push_back(i);
                     }
                 }
             }
-            if (queue.empty())
+        }
+        cliques.push_back(current_clique);
+        current_clique.clear();
+
+        uint32_t max = 0;
+
+        for (int i = 0; i < cliques.size(); i++)
+        {
+            if (cliques[i].size() > max)
             {
-                cliques.push_back(current_clique);
-                current_clique.clear();
-                for (int i = 0; i < nodes.size(); i++)
+                max = cliques[i].size();
+            }
+        }
+
+        return max;
+    }
+
+    uint32_t findMaximalCliqueHeuristicDFS()
+    {
+        std::vector<std::vector<uint32_t>> cliques;
+        std::vector<uint32_t> visited(nodes.size(), 0);
+        std::vector<uint32_t> current_clique;
+
+        createAdjacency();
+
+        for (uint32_t start = 0; start < nodes.size(); start++)
+        {
+            if (visited[start] == 0)
+            {
+                std::vector<uint32_t> stack = {start};
+                visited[start] = 1;
+                current_clique.push_back(start);
+                while (!stack.empty())
                 {
-                    if (visited[i] == 0)
+                    uint32_t current = stack.back();
+                    stack.pop_back();
+                    for (int i : adjacency[current])
                     {
-                        queue.push_back(i);
-                        visited[i] = 1;
-                        current_clique.push_back(nodes[i]);
-                        break;
+                        if (visited[i] == 0)
+                        {
+                            bool is_connected_to_all = true;
+                            for (const uint32_t &node : current_clique)
+                            {
+                                if (!isAdjacent(nodes[i], node))
+                                {
+                                    is_connected_to_all = false;
+                                    break;
+                                }
+                            }
+                            if (is_connected_to_all)
+                            {
+                                visited[i] = 1;
+                                current_clique.push_back(nodes[i]);
+                                stack.push_back(i);
+                            }
+                        }
                     }
                 }
+                cliques.push_back(current_clique);
+                current_clique.clear();
             }
         }
 
@@ -293,14 +336,16 @@ public:
         return max;
     }
 
-    uint32_t findMaximalCliqueBronKerboschSimple(const uint32_t d)
+    uint32_t findMaximalCliqueBronKerboschSimple()
     {
         std::vector<uint32_t> R;
         std::vector<uint32_t> P = nodes;
         std::vector<uint32_t> X;
         std::vector<std::vector<uint32_t>> maximalCliques;
 
-        findMaximalCliqueBronKerboschSimple(R, P, X, d, maximalCliques);
+        createAdjacency();
+
+        findMaximalCliqueBronKerboschSimple(R, P, X, maximalCliques);
 
         uint32_t max = 0;
         for (uint32_t i = 0; i < maximalCliques.size(); i++)
@@ -314,7 +359,7 @@ public:
         return max;
     }
 
-    void findMaximalCliqueBronKerboschSimple(std::vector<uint32_t> R, std::vector<uint32_t> P, std::vector<uint32_t> X, const uint32_t d, std::vector<std::vector<uint32_t>> &maximalCliques)
+    void findMaximalCliqueBronKerboschSimple(std::vector<uint32_t> &R, std::vector<uint32_t> &P, std::vector<uint32_t> &X, std::vector<std::vector<uint32_t>> &maximalCliques)
     {
         if (P.empty() && X.empty())
         {
@@ -330,19 +375,19 @@ public:
                 std::vector<uint32_t> newX;
                 for (uint32_t j = 0; j < P.size(); j++)
                 {
-                    if (hammingDistance(P[i], P[j]) >= d)
+                    if (isAdjacent(P[i], P[j]))
                     {
                         newP.push_back(P[j]);
                     }
                 }
                 for (uint32_t j = 0; j < X.size(); j++)
                 {
-                    if (hammingDistance(P[i], X[j]) >= d)
+                    if (isAdjacent(P[i], X[j]))
                     {
                         newX.push_back(X[j]);
                     }
                 }
-                findMaximalCliqueBronKerboschSimple(newR, newP, newX, d, maximalCliques);
+                findMaximalCliqueBronKerboschSimple(newR, newP, newX, maximalCliques);
                 for (uint32_t j = 0; j < P.size(); j++)
                 {
                     if (P[i] == P[j])
@@ -356,14 +401,16 @@ public:
         }
     }
 
-    uint32_t findMaximalCliqueBronKerboschPivot(const uint32_t d)
+    uint32_t findMaximalCliqueBronKerboschPivot()
     {
         std::vector<uint32_t> R;
         std::vector<uint32_t> P = nodes;
         std::vector<uint32_t> X;
         std::vector<std::vector<uint32_t>> maximalCliques;
 
-        findMaximalCliqueBronKerboschPivot(R, P, X, d, maximalCliques);
+        createAdjacency();
+
+        findMaximalCliqueBronKerboschPivot(R, P, X, maximalCliques);
 
         uint32_t max = 0;
         for (uint32_t i = 0; i < maximalCliques.size(); i++)
@@ -377,7 +424,7 @@ public:
         return max;
     }
 
-    uint32_t findMaximalCliqueBronKerboschPivot(std::vector<uint32_t> R, std::vector<uint32_t> P, std::vector<uint32_t> X, const uint32_t d, std::vector<std::vector<uint32_t>> &maximalCliques)
+    uint32_t findMaximalCliqueBronKerboschPivot(std::vector<uint32_t> &R, std::vector<uint32_t> &P, std::vector<uint32_t> &X, std::vector<std::vector<uint32_t>> &maximalCliques)
     {
         // TODO
         return 0;
@@ -389,23 +436,26 @@ void findMaximalClique(const uint32_t n, const uint32_t d, const uint32_t m)
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    graph g(n);
+    graph g(n, d);
 
     uint32_t max = 0;
 
     switch (m)
     {
     case 1:
-        max = g.findMaximalCliqueBruteForce(d);
+        max = g.findMaximalCliqueBruteForce();
         break;
     case 2:
-        max = g.findMaximalCliqueHeuristicBFS(d);
+        max = g.findMaximalCliqueHeuristicBFS();
         break;
     case 3:
-        max = g.findMaximalCliqueBronKerboschSimple(d);
+        max = g.findMaximalCliqueHeuristicDFS();
         break;
     case 4:
-        max = g.findMaximalCliqueBronKerboschPivot(d);
+        max = g.findMaximalCliqueBronKerboschSimple();
+        break;
+    case 5:
+        max = g.findMaximalCliqueBronKerboschPivot();
         break;
     }
 
@@ -424,8 +474,9 @@ int main()
     std::cout << "Enter m for the method to use." << std::endl;
     std::cout << "Enter 1 for brute force." << std::endl;
     std::cout << "Enter 2 for Heuristic Breadth-First Search." << std::endl;
-    std::cout << "Enter 3 for Simple Bron-Kerbosch." << std::endl;
-    std::cout << "Enter 4 for Pivot Bron-Kerbosch." << std::endl;
+    std::cout << "Enter 3 for Heuristic Depth-First Search." << std::endl;
+    std::cout << "Enter 4 for Simple Bron-Kerbosch." << std::endl;
+    std::cout << "Enter 5 for Pivot Bron-Kerbosch." << std::endl;
     std::cout << "Enter unvalid numbers to exit." << std::endl;
 
     while (true)
@@ -454,7 +505,7 @@ int main()
         std::cout << "Enter m: ";
         std::getline(std::cin, temp);
 
-        if (stoi(temp) < 1 || stoi(temp) > 4)
+        if (stoi(temp) < 1 || stoi(temp) > 5)
         {
             break;
         }
