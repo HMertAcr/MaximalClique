@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <queue>
+#include <unordered_set>
 #include <algorithm>
 #include <chrono>
 
@@ -22,6 +23,7 @@ uint32_t hammingDistance(const uint32_t bit_a, const uint32_t bit_b)
 {
     return __builtin_popcount(bit_a ^ bit_b);
 }
+// std::bitset::count might be better
 
 std::vector<uint32_t> findAdjacencyBrute(uint32_t d, uint32_t number, uint32_t bitlength)
 {
@@ -38,13 +40,70 @@ std::vector<uint32_t> findAdjacencyBrute(uint32_t d, uint32_t number, uint32_t b
     return adjacency;
 }
 
+class Adjacency
+{
+public:
+    uint32_t distance;
+
+    // Default constructor
+    Adjacency()
+    {
+    }
+
+    // Constructor
+    Adjacency(uint32_t bitlength, uint32_t distance) : distance(distance)
+    {
+        uint32_t s = (1 << bitlength);
+        for (uint32_t i = 0; i < s; i++)
+        {
+            adjacencies.push_back(std::unordered_set<uint32_t>());
+            adjacencies[i].reserve(s);
+            for (uint32_t j = 0; j < s; j++)
+            {
+                if (hammingDistance(i, j) == distance)
+                {
+                    adjacencies[i].insert(j);
+                }
+            }
+        }
+    }
+
+    // Copy constructor
+    Adjacency(const Adjacency &a)
+    {
+        this->distance = a.distance;
+        this->adjacencies = a.adjacencies;
+    }
+
+    // Destructor
+    ~Adjacency()
+    {
+        adjacencies.clear();
+    }
+
+    // Returns the set of d-adjacent nodes for the given node 'x'.
+    const std::unordered_set<uint32_t> &GetAdjacencies(uint32_t x) const
+    {
+        return adjacencies.at(x);
+    }
+
+    // Returns true if nodes 'a' and 'b' are d-adjacent, false otherwise.
+    bool AreAdjacent(uint32_t a, uint32_t b) const
+    {
+        return adjacencies.at(a).count(b) > 0;
+    }
+
+private:
+    std::vector<std::unordered_set<uint32_t>> adjacencies;
+};
+
 class graph
 {
 public:
     std::vector<uint32_t> nodes;
-    std::vector<std::vector<uint32_t>> adjacency;
-    uint32_t distance;
+    Adjacency adjacency;
     uint32_t bitlength;
+    uint32_t distance;
 
     // Default constructor
     graph()
@@ -52,15 +111,14 @@ public:
     }
 
     // Constructor
-    graph(uint32_t bitlength, uint32_t distance)
+    graph(uint32_t bitlength, uint32_t distance):bitlength(bitlength), distance(distance)
     {
-        this->bitlength = bitlength;
-        this->distance = distance;
-
         for (uint32_t i = 0; i < (1 << bitlength); i++)
         {
             nodes.push_back(i);
         }
+        //comment out the following if you want to not use adjacency on all functions
+        adjacency = Adjacency(bitlength, distance);
     }
 
     // Copy constructor
@@ -76,31 +134,19 @@ public:
     ~graph()
     {
         nodes.clear();
-        adjacency.clear();
     }
 
     void createAdjacency()
     {
-        adjacency.clear();
-        adjacency.resize(nodes.size());
-
-        for (uint32_t i = 0; i < nodes.size(); i++)
-        {
-            adjacency[i] = findAdjacencyBrute(distance, nodes[i], bitlength);
-        }
-    }
-
-    bool isAdjacent(uint32_t node_a, uint32_t node_b)
-    {
-        return std::find(adjacency[node_a].begin(), adjacency[node_a].end(), node_b) != adjacency[node_a].end();
+        adjacency = Adjacency(bitlength, distance);
     }
 
     static bool isSameNodes(const std::vector<uint32_t> &nodes_a, const std::vector<uint32_t> &nodes_b)
     {
 
-        auto tempNodes_b = nodes_b;
+        std::vector<uint32_t> nodes_b_copy = nodes_b;
 
-        if (nodes_a.size() != tempNodes_b.size())
+        if (nodes_a.size() != nodes_b_copy.size())
         {
             return false;
         }
@@ -108,11 +154,11 @@ public:
         for (uint32_t i = 0; i < nodes_a.size(); i++)
         {
             bool found = false;
-            for (uint32_t j = 0; j < tempNodes_b.size(); j++)
+            for (uint32_t j = 0; j < nodes_b_copy.size(); j++)
             {
-                if (nodes_a[i] == tempNodes_b[j])
+                if (nodes_a[i] == nodes_b_copy[j])
                 {
-                    tempNodes_b.erase(tempNodes_b.begin() + j);
+                    nodes_b_copy.erase(nodes_b_copy.begin() + j);
                     found = true;
                     break;
                 }
@@ -164,14 +210,13 @@ public:
         return subset;
     }
 
-    // TODO: Optimize with adjacency list
-    bool checkClique(std::vector<uint32_t> &clique)
+    bool checkClique(const std::vector<uint32_t> &clique)
     {
         for (uint32_t i = 0; i < clique.size(); i++)
         {
             for (uint32_t j = i + 1; j < clique.size(); j++)
             {
-                if (isAdjacent(clique[i], clique[j]))
+                if (adjacency.AreAdjacent(clique[i], clique[j]))
                 {
                     return false;
                 }
@@ -182,13 +227,15 @@ public:
 
     bool checkMaxmialClique(std::vector<uint32_t> &clique)
     {
-        for (const uint32_t &node : adjacency[clique[0]])
+        const std::unordered_set<uint32_t> &adjacencies = adjacency.GetAdjacencies(clique[0]);
+        for (const uint32_t &node : adjacencies)
         {
             if (std::find(clique.begin(), clique.end(), node) == clique.end())
             {
                 clique.push_back(node);
                 if (checkClique(clique))
                 {
+                    clique.pop_back();
                     return false;
                 }
                 clique.pop_back();
@@ -200,8 +247,6 @@ public:
     uint32_t findMaximalCliqueBruteForce()
     {
         std::vector<std::vector<uint32_t>> subsets = getSubsets(nodes);
-
-        createAdjacency();
 
         for (uint32_t i = 0; i < subsets.size(); i++)
         {
@@ -233,20 +278,19 @@ public:
         visited[0] = 1;
         current_clique.push_back(nodes[0]);
 
-        createAdjacency();
-
         while (!queue.empty())
         {
             uint32_t current = queue.front();
             queue.erase(queue.begin());
-            for (int i : adjacency[current])
+            const std::unordered_set<uint32_t> &adjacencies = adjacency.GetAdjacencies(current);
+            for (const uint32_t &i : adjacencies)
             {
                 if (visited[i] == 0)
                 {
                     bool is_connected_to_all = true;
                     for (const uint32_t &node : current_clique)
                     {
-                        if (!isAdjacent(nodes[i], node))
+                        if (!adjacency.AreAdjacent(nodes[i], node))
                         {
                             is_connected_to_all = false;
                             break;
@@ -283,8 +327,6 @@ public:
         std::vector<uint32_t> visited(nodes.size(), 0);
         std::vector<uint32_t> current_clique;
 
-        createAdjacency();
-
         for (uint32_t start = 0; start < nodes.size(); start++)
         {
             if (visited[start] == 0)
@@ -296,14 +338,15 @@ public:
                 {
                     uint32_t current = stack.back();
                     stack.pop_back();
-                    for (int i : adjacency[current])
+                    const std::unordered_set<uint32_t> &adjacencies = adjacency.GetAdjacencies(current);
+                    for (const uint32_t &i : adjacencies)
                     {
                         if (visited[i] == 0)
                         {
                             bool is_connected_to_all = true;
                             for (const uint32_t &node : current_clique)
                             {
-                                if (!isAdjacent(nodes[i], node))
+                                if (!adjacency.AreAdjacent(nodes[i], node))
                                 {
                                     is_connected_to_all = false;
                                     break;
@@ -343,8 +386,6 @@ public:
         std::vector<uint32_t> X;
         std::vector<std::vector<uint32_t>> maximalCliques;
 
-        createAdjacency();
-
         findMaximalCliqueBronKerboschSimple(R, P, X, maximalCliques);
 
         uint32_t max = 0;
@@ -375,14 +416,14 @@ public:
                 std::vector<uint32_t> newX;
                 for (uint32_t j = 0; j < P.size(); j++)
                 {
-                    if (isAdjacent(P[i], P[j]))
+                    if (adjacency.AreAdjacent(P[i], P[j]))
                     {
                         newP.push_back(P[j]);
                     }
                 }
                 for (uint32_t j = 0; j < X.size(); j++)
                 {
-                    if (isAdjacent(P[i], X[j]))
+                    if (adjacency.AreAdjacent(P[i], X[j]))
                     {
                         newX.push_back(X[j]);
                     }
@@ -407,8 +448,6 @@ public:
         std::vector<uint32_t> P = nodes;
         std::vector<uint32_t> X;
         std::vector<std::vector<uint32_t>> maximalCliques;
-
-        createAdjacency();
 
         findMaximalCliqueBronKerboschPivot(R, P, X, maximalCliques);
 

@@ -36,7 +36,7 @@ public:
     }
 
     // Constructor
-    graph(uint32_t bitlength, uint32_t distance) : bitlength(bitlength), distance(distance)
+    graph(uint32_t bitlength, uint32_t distance):bitlength(bitlength), distance(distance)
     {
         for (uint32_t i = 0; i < (1 << bitlength); i++)
         {
@@ -146,7 +146,7 @@ public:
     {
         for (uint32_t i = 0; i < nodes.size(); i++)
         {
-            if (std::find(clique.begin(), clique.end(), nodes[i]) == clique.end())
+            if (hammingDistance(clique[0], i) >= distance && std::find(clique.begin(), clique.end(), nodes[i]) == clique.end())
             {
                 clique.push_back(nodes[i]);
                 if (checkClique(clique))
@@ -166,16 +166,7 @@ public:
 
         for (uint32_t i = 0; i < subsets.size(); i++)
         {
-            if (!checkClique(subsets[i]))
-            {
-                subsets.erase(subsets.begin() + i);
-                i--;
-            }
-        }
-
-        for (uint32_t i = 0; i < subsets.size(); i++)
-        {
-            if (!checkMaxmialClique(subsets[i]))
+            if (!checkClique(subsets[i]) && !checkMaxmialClique(subsets[i]))
             {
                 subsets.erase(subsets.begin() + i);
                 i--;
@@ -201,7 +192,8 @@ public:
         std::vector<uint32_t> current_clique;
         std::vector<uint32_t> queue = {0};
         visited[0] = 1;
-        current_clique.push_back(0);
+        current_clique.push_back(nodes[0]);
+        
         while (!queue.empty())
         {
             uint32_t current = queue.back();
