@@ -3,6 +3,8 @@
 #include <vector>
 #include <unordered_set>
 #include <algorithm>
+#include <stack>
+#include <tuple>
 #include <chrono>
 
 std::string binaryRep(const uint32_t bit, const uint32_t bitlength)
@@ -110,13 +112,13 @@ public:
     }
 
     // Constructor
-    graph(uint32_t bitlength, uint32_t distance):bitlength(bitlength), distance(distance)
+    graph(uint32_t bitlength, uint32_t distance) : bitlength(bitlength), distance(distance)
     {
         for (uint32_t i = 0; i < (1 << bitlength); i++)
         {
             nodes.push_back(i);
         }
-        //comment out the following if you want to not use adjacency on all functions
+        // comment out the following if you want to not use adjacency on all functions
         adjacency = Adjacency(bitlength, distance);
     }
 
@@ -462,10 +464,153 @@ public:
         return max;
     }
 
-    uint32_t findMaximalCliqueBronKerboschPivot(std::vector<uint32_t> &R, std::vector<uint32_t> &P, std::vector<uint32_t> &X, std::vector<std::vector<uint32_t>> &maximalCliques)
+    uint32_t choosePivot(const std::vector<uint32_t> &P, const std::vector<uint32_t> &X)
     {
-        // TODO
-        return 0;
+        uint32_t pivot = P[0];
+        uint32_t minNeighbors = UINT32_MAX;
+        for (uint32_t u : P)
+        {
+            uint32_t neighbors = 0;
+            for (uint32_t v : P)
+            {
+                if (adjacency.AreAdjacent(u, v))
+                {
+                    neighbors++;
+                }
+            }
+            for (uint32_t v : X)
+            {
+                if (adjacency.AreAdjacent(u, v))
+                {
+                    neighbors++;
+                }
+            }
+            if (neighbors < minNeighbors)
+            {
+                pivot = u;
+                minNeighbors = neighbors;
+            }
+        }
+        return pivot;
+    }
+
+    void findMaximalCliqueBronKerboschPivot(std::vector<uint32_t> &R, std::vector<uint32_t> &P, std::vector<uint32_t> &X, std::vector<std::vector<uint32_t>> &maximalCliques)
+    {
+        if (P.empty() && X.empty())
+        {
+            maximalCliques.push_back(R);
+        }
+        else
+        {
+            uint32_t pivot = choosePivot(P, X);
+            std::vector<uint32_t> P1;
+            std::vector<uint32_t> X1;
+            for (uint32_t v : P)
+            {
+                if (adjacency.AreAdjacent(pivot, v))
+                {
+                    P1.push_back(v);
+                }
+            }
+            for (uint32_t v : X)
+            {
+                if (adjacency.AreAdjacent(pivot, v))
+                {
+                    X1.push_back(v);
+                }
+            }
+            findMaximalCliqueBronKerboschPivot(R, P1, X1, maximalCliques);
+            for (uint32_t u : P)
+            {
+                if (u != pivot)
+                {
+                    std::vector<uint32_t> newR = R;
+                    newR.push_back(u);
+                    std::vector<uint32_t> newP;
+                    std::vector<uint32_t> newX;
+                    for (uint32_t v : P)
+                    {
+                        if (adjacency.AreAdjacent(u, v))
+                        {
+                            newP.push_back(v);
+                        }
+                    }
+                    for (uint32_t v : X)
+                    {
+                        if (adjacency.AreAdjacent(u, v))
+                        {
+                            newX.push_back(v);
+                        }
+                    }
+                    findMaximalCliqueBronKerboschPivot(newR, newP, newX, maximalCliques);
+                    P.erase(std::remove(P.begin(), P.end(), u), P.end());
+                    X.push_back(u);
+                }
+            }
+        }
+    }
+
+    uint32_t findMaximalCliqueTTT()
+    {
+        std::vector<std::unordered_set<uint32_t>> cliques;
+        std::vector<uint32_t> remaining_nodes = nodes;
+
+        while (!remaining_nodes.empty())
+        {
+            // Choose a vertex with the maximum degree.
+            uint32_t max_degree_vertex = remaining_nodes[0];
+
+            uint32_t max_degree = adjacency.GetAdjacencies(max_degree_vertex).size();
+
+            for (uint32_t v : remaining_nodes)
+            {
+                uint32_t degree = adjacency.GetAdjacencies(v).size();
+                if (degree > max_degree)
+                {
+                    max_degree_vertex = v;
+                    max_degree = degree;
+                }
+            }
+
+            remaining_nodes.erase(std::find(remaining_nodes.begin(), remaining_nodes.end(), max_degree_vertex));
+
+            // Initialize the clique to be {v}.
+            std::unordered_set<uint32_t> clique{max_degree_vertex};
+
+            // Add all vertices that are adjacent to all vertices in the clique.
+            for (uint32_t u : remaining_nodes)
+            {
+                
+                bool is_adjacent_to_all_vertices = true;
+                for (uint32_t v : clique)
+                {
+                    if (!adjacency.AreAdjacent(u, v))
+                    {
+                        is_adjacent_to_all_vertices = false;
+                        break;
+                    }
+                }
+
+                if (is_adjacent_to_all_vertices)
+                {
+                    clique.insert(u);
+                }
+            }
+
+            // Add the clique to the set of cliques.
+            cliques.push_back(clique);
+        }
+
+        uint32_t max = 0;
+        for (uint32_t i = 0; i < cliques.size(); i++)
+        {
+            if (cliques[i].size() > max)
+            {
+                max = cliques[i].size();
+            }
+        }
+
+        return max;
     }
 };
 
@@ -498,6 +643,9 @@ void findMaximalClique(const uint32_t n, const uint32_t d, const uint32_t m)
     case 5:
         max = g.findMaximalCliqueBronKerboschPivot();
         break;
+    case 6:
+        max = g.findMaximalCliqueTTT();
+        break;
     }
 
     timepoint_t end = clock_t::now();
@@ -518,6 +666,7 @@ int main()
     std::cout << "Enter 3 for Heuristic Depth-First Search." << std::endl;
     std::cout << "Enter 4 for Simple Bron-Kerbosch." << std::endl;
     std::cout << "Enter 5 for Pivot Bron-Kerbosch." << std::endl;
+    std::cout << "Enter 6 for Tomita, Tanaka, and Takahashi (TTT)." << std::endl;
     std::cout << "Enter unvalid numbers to exit." << std::endl;
 
     while (true)
@@ -546,7 +695,7 @@ int main()
         std::cout << "Enter m: ";
         std::getline(std::cin, temp);
 
-        if (stoi(temp) < 1 || stoi(temp) > 5)
+        if (stoi(temp) < 1 || stoi(temp) > 6)
         {
             break;
         }
