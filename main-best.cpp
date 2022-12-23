@@ -29,7 +29,9 @@ uint32_t hammingDistance(const uint32_t bit_a, const uint32_t bit_b)
 class Adjacency
 {
 public:
+    uint32_t bitlength;
     uint32_t distance;
+    bool isAdjacencyCreated = false;
 
     // Default constructor
     Adjacency()
@@ -37,20 +39,13 @@ public:
     }
 
     // Constructor
-    Adjacency(uint32_t bitlength, uint32_t distance) : distance(distance)
+    Adjacency(uint32_t bitlength, uint32_t distance) : distance(distance), bitlength(bitlength)
     {
         uint32_t s = (1 << bitlength);
         for (uint32_t i = 0; i < s; i++)
         {
             adjacencies.push_back(std::unordered_set<uint32_t>());
             adjacencies[i].reserve(s);
-            for (uint32_t j = 0; j < s; j++)
-            {
-                if (hammingDistance(i, j) == distance)
-                {
-                    adjacencies[i].insert(j);
-                }
-            }
         }
     }
 
@@ -67,16 +62,53 @@ public:
         adjacencies.clear();
     }
 
-    // Returns the set of d-adjacent nodes for the given node 'x'.
-    const std::unordered_set<uint32_t> &GetAdjacencies(uint32_t x) const
+    void findAdjacencies()
     {
+        for (uint32_t i = 0; i < adjacencies.size(); i++)
+        {
+            for (uint32_t j = i + 1; j < adjacencies.size(); j++)
+            {
+                if (hammingDistance(i, j) >= distance)
+                {
+                    adjacencies[i].insert(j);
+                    adjacencies[j].insert(i);
+                }
+            }
+        }
+        isAdjacencyCreated = true;
+    }
+
+    // Returns the set of d-adjacent nodes for the given node 'x'.
+    const std::unordered_set<uint32_t> &GetAdjacencies(uint32_t x)
+    {
+        if (!isAdjacencyCreated)
+        {
+            if (adjacencies[x].size() == 0)
+            {
+                for (uint32_t i = 0; i < adjacencies.size(); i++)
+                {
+                    if (hammingDistance(x, i) >= distance)
+                    {
+                        adjacencies[x].insert(i);
+                    }
+                }
+            }
+        }
         return adjacencies.at(x);
     }
 
     // Returns true if nodes 'a' and 'b' are d-adjacent, false otherwise.
-    bool AreAdjacent(uint32_t a, uint32_t b) const
+    bool areAdjacent(uint32_t a, uint32_t b) const
     {
-        return adjacencies.at(a).count(b) > 0;
+        if (isAdjacencyCreated)
+        {
+            return adjacencies.at(a).count(b) > 0;
+        }
+        else
+        {
+            return hammingDistance(a, b) >= distance;
+        }
+        //could just calculate hamming distance even might be faster
     }
 
 private:
@@ -103,8 +135,9 @@ public:
         {
             nodes.push_back(i);
         }
-        
+
         adjacency = Adjacency(bitlength, distance);
+
     }
 
     // Copy constructor
@@ -124,7 +157,7 @@ public:
 
     void createAdjacency()
     {
-        adjacency = Adjacency(bitlength, distance);
+        adjacency.findAdjacencies();
     }
 
     static bool isSameNodes(const std::vector<uint32_t> &nodes_a, const std::vector<uint32_t> &nodes_b)
@@ -202,7 +235,7 @@ public:
         {
             for (uint32_t j = i + 1; j < clique.size(); j++)
             {
-                if (adjacency.AreAdjacent(clique[i], clique[j]))
+                if (adjacency.areAdjacent(clique[i], clique[j]))
                 {
                     return false;
                 }
@@ -266,17 +299,16 @@ public:
 
         while (!queue.empty())
         {
-            uint32_t current = queue.front();
-            queue.erase(queue.begin());
-            const std::unordered_set<uint32_t> &adjacencies = adjacency.GetAdjacencies(current);
-            for (const uint32_t &i : adjacencies)
+            uint32_t current = queue.back();
+            queue.pop_back();
+            for (int i = 0; i < nodes.size(); i++)
             {
-                if (visited[i] == 0)
+                if (visited[i] == 0 && adjacency.areAdjacent(current, nodes[i]))
                 {
                     bool is_connected_to_all = true;
                     for (const uint32_t &node : current_clique)
                     {
-                        if (!adjacency.AreAdjacent(nodes[i], node))
+                        if (!adjacency.areAdjacent(current, nodes[i]))
                         {
                             is_connected_to_all = false;
                             break;
@@ -286,13 +318,26 @@ public:
                     {
                         visited[i] = 1;
                         current_clique.push_back(nodes[i]);
+                        queue.push_back(nodes[i]);
+                    }
+                }
+            }
+            if (queue.empty())
+            {
+                cliques.push_back(current_clique);
+                current_clique.clear();
+                for (int i = 0; i < nodes.size(); i++)
+                {
+                    if (visited[i] == 0)
+                    {
                         queue.push_back(i);
+                        visited[i] = 1;
+                        current_clique.push_back(nodes[i]);
+                        break;
                     }
                 }
             }
         }
-        cliques.push_back(current_clique);
-        current_clique.clear();
 
         uint32_t max = 0;
 
@@ -332,7 +377,7 @@ public:
                             bool is_connected_to_all = true;
                             for (const uint32_t &node : current_clique)
                             {
-                                if (!adjacency.AreAdjacent(nodes[i], node))
+                                if (!adjacency.areAdjacent(nodes[i], node))
                                 {
                                     is_connected_to_all = false;
                                     break;
@@ -402,14 +447,14 @@ public:
                 std::vector<uint32_t> newX;
                 for (uint32_t j = 0; j < P.size(); j++)
                 {
-                    if (adjacency.AreAdjacent(P[i], P[j]))
+                    if (adjacency.areAdjacent(P[i], P[j]))
                     {
                         newP.push_back(P[j]);
                     }
                 }
                 for (uint32_t j = 0; j < X.size(); j++)
                 {
-                    if (adjacency.AreAdjacent(P[i], X[j]))
+                    if (adjacency.areAdjacent(P[i], X[j]))
                     {
                         newX.push_back(X[j]);
                     }
@@ -458,14 +503,14 @@ public:
             uint32_t neighbors = 0;
             for (uint32_t v : P)
             {
-                if (adjacency.AreAdjacent(u, v))
+                if (adjacency.areAdjacent(u, v))
                 {
                     neighbors++;
                 }
             }
             for (uint32_t v : X)
             {
-                if (adjacency.AreAdjacent(u, v))
+                if (adjacency.areAdjacent(u, v))
                 {
                     neighbors++;
                 }
@@ -492,14 +537,14 @@ public:
             std::vector<uint32_t> X1;
             for (uint32_t v : P)
             {
-                if (adjacency.AreAdjacent(pivot, v))
+                if (adjacency.areAdjacent(pivot, v))
                 {
                     P1.push_back(v);
                 }
             }
             for (uint32_t v : X)
             {
-                if (adjacency.AreAdjacent(pivot, v))
+                if (adjacency.areAdjacent(pivot, v))
                 {
                     X1.push_back(v);
                 }
@@ -515,14 +560,14 @@ public:
                     std::vector<uint32_t> newX;
                     for (uint32_t v : P)
                     {
-                        if (adjacency.AreAdjacent(u, v))
+                        if (adjacency.areAdjacent(u, v))
                         {
                             newP.push_back(v);
                         }
                     }
                     for (uint32_t v : X)
                     {
-                        if (adjacency.AreAdjacent(u, v))
+                        if (adjacency.areAdjacent(u, v))
                         {
                             newX.push_back(v);
                         }
@@ -565,11 +610,11 @@ public:
             // Add all vertices that are adjacent to all vertices in the clique.
             for (uint32_t u : remaining_nodes)
             {
-                
+
                 bool is_adjacent_to_all_vertices = true;
                 for (uint32_t v : clique)
                 {
-                    if (!adjacency.AreAdjacent(u, v))
+                    if (!adjacency.areAdjacent(u, v))
                     {
                         is_adjacent_to_all_vertices = false;
                         break;
@@ -599,7 +644,7 @@ public:
     }
 };
 
-void findMaximalClique(const uint32_t n, const uint32_t d, const uint32_t m)
+void findMaximalClique(const uint32_t n, const uint32_t d, const uint32_t m, std::string a)
 {
 
     using clock_t = std::chrono::high_resolution_clock;
@@ -608,6 +653,12 @@ void findMaximalClique(const uint32_t n, const uint32_t d, const uint32_t m)
     timepoint_t start = clock_t::now();
 
     graph g(n, d);
+
+    if (a == "y" || a == "Y")
+    {
+        g.createAdjacency();
+    }
+    timepoint_t midpoint = clock_t::now();
 
     uint32_t max = 0;
 
@@ -635,10 +686,16 @@ void findMaximalClique(const uint32_t n, const uint32_t d, const uint32_t m)
 
     timepoint_t end = clock_t::now();
 
-    double elapsed_seconds = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000000.0;
-
     std::cout << "Maximum Clique Size: " << max << std::endl;
-    std::cout << "Elapsed Time: " << elapsed_seconds << "s" << std::endl;
+
+    if (a == "y" || a == "Y")
+    {
+        double elapsedSecondsGraphAndAdjacency = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000000.0;
+        std::cout << "Time spent creating graph and adjacencies: " << elapsedSecondsGraphAndAdjacency << "s" << std::endl;
+    }
+
+    double elapsedSecondsAlgorithm = std::chrono::duration_cast<std::chrono::microseconds>(end - midpoint).count() / 1000000.0;
+    std::cout << "Algorithm time: " << elapsedSecondsAlgorithm << "s" << std::endl;
 }
 
 int main()
@@ -646,6 +703,7 @@ int main()
 
     std::cout << "Enter n and d to find the maximal clique of a graph with n nodes and d distance." << std::endl;
     std::cout << "Enter m for the method to use." << std::endl;
+    std::cout << "Enter a to create adjacency matrix. y/n" << std::endl;
     std::cout << "Enter 1 for brute force." << std::endl;
     std::cout << "Enter 2 for Heuristic Breadth-First Search." << std::endl;
     std::cout << "Enter 3 for Heuristic Depth-First Search." << std::endl;
@@ -686,7 +744,17 @@ int main()
         }
         uint32_t m = stoi(temp);
 
-        findMaximalClique(n, d, m);
+        std::cout << "Enter a: ";
+        std::getline(std::cin, temp);
+
+        if (!(temp == "y" || temp == "Y" || temp == "n" || temp == "N"))
+        {
+            break;
+        }
+
+        std::string a = temp;
+
+        findMaximalClique(n, d, m, a);
     }
 
     return 0;
