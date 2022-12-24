@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <sstream>
 #include <vector>
 #include <unordered_set>
 #include <stack>
@@ -528,7 +529,7 @@ public:
     }
 };
 
-void findMaximalClique(const uint32_t n, const uint32_t d, const uint32_t m, std::string a)
+void findMaximalClique(const uint32_t n, const uint32_t d, const uint32_t m, const char a)
 {
 
     using clock_t = std::chrono::high_resolution_clock;
@@ -538,7 +539,7 @@ void findMaximalClique(const uint32_t n, const uint32_t d, const uint32_t m, std
 
     graph g(n, d);
 
-    if (a == "y" || a == "Y")
+    if (a == 'y' || a == 'Y')
     {
         g.createAdjacency();
     }
@@ -569,7 +570,7 @@ void findMaximalClique(const uint32_t n, const uint32_t d, const uint32_t m, std
 
     std::cout << "Maximum Clique Size: " << max << std::endl;
 
-    if (a == "y" || a == "Y")
+    if (a == 'y' || a == 'Y')
     {
         double elapsedSecondsGraphAndAdjacency = std::chrono::duration_cast<std::chrono::microseconds>(midpoint - start).count() / 1000000.0;
         std::cout << "Time spent creating graph and adjacencies: " << elapsedSecondsGraphAndAdjacency << "s" << std::endl;
@@ -594,73 +595,44 @@ int main()
 
     while (true)
     {
-
         std::string temp;
+        int n, d, m;
+        char a;
 
         std::cout << "Enter n: ";
         std::getline(std::cin, temp);
-
-        bool isNumber = true;
-        for (char c : temp)
-        {
-            if (!isdigit(c))
-            {
-                isNumber = false;
-                break;
-            }
-        }
-
-        if (!isNumber || stoi(temp) < 1)
+        if (!std::all_of(temp.begin(), temp.end(), [](char c)
+                         { return std::isdigit(c); }) ||
+            !(std::istringstream(temp) >> n) || n < 1)
         {
             break;
         }
-        uint32_t n = stoi(temp);
 
         std::cout << "Enter d: ";
         std::getline(std::cin, temp);
-
-        for (char c : temp)
-        {
-            if (!isdigit(c))
-            {
-                isNumber = false;
-                break;
-            }
-        }
-
-        if (!isNumber || stoi(temp) < 1)
+        if (!std::all_of(temp.begin(), temp.end(), [](char c)
+                         { return std::isdigit(c); }) ||
+            !(std::istringstream(temp) >> d) || d < 1)
         {
             break;
         }
-        uint32_t d = stoi(temp);
 
         std::cout << "Enter m: ";
         std::getline(std::cin, temp);
-
-        for (char c : temp)
-        {
-            if (!isdigit(c))
-            {
-                isNumber = false;
-                break;
-            }
-        }
-
-        if (!isNumber || stoi(temp) < 1 || stoi(temp) > 5)
+        if (!std::all_of(temp.begin(), temp.end(), [](char c)
+                         { return std::isdigit(c); }) ||
+            !(std::istringstream(temp) >> m) || m < 1 || m > 5)
         {
             break;
         }
-        uint32_t m = stoi(temp);
 
         std::cout << "Enter a: ";
         std::getline(std::cin, temp);
-
-        if (!(temp == "y" || temp == "Y" || temp == "n" || temp == "N"))
+        if (temp != "y" && temp != "Y" && temp != "n" && temp != "N")
         {
             break;
         }
-
-        std::string a = temp;
+        a = temp[0];
 
         findMaximalClique(n, d, m, a);
     }
