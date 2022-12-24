@@ -292,7 +292,6 @@ public:
 
         for (uint32_t start_node : nodes)
         {
-            // Initialize the queue with the starting node
             std::queue<uint32_t> node_queue({start_node});
             std::unordered_set<uint32_t> clique_nodes({start_node});
 
@@ -301,14 +300,11 @@ public:
                 uint32_t current_node = node_queue.front();
                 node_queue.pop();
 
-                // Iterate through all the neighbors of the current node
                 for (uint32_t neighbor : adjacency.getAdjacencies(current_node))
                 {
-                    // If the neighbor is already in the clique, skip it
                     if (clique_nodes.count(neighbor))
                         continue;
 
-                    // If the neighbor is adjacent to all the nodes in the clique, add it to the clique
                     bool is_adjacent_to_all = true;
                     for (uint32_t clique_node : clique_nodes)
                     {
@@ -326,61 +322,10 @@ public:
                 }
             }
 
-            // Update the maximum clique size if the current clique is larger
             cliques.push_back(clique_nodes);
         }
 
         return getLargestListSize(cliques);
-    }
-
-    uint32_t
-    findMaximalCliqueHeuristicDFS()
-    {
-        // std::vector<std::vector<uint32_t>> cliques;
-        // std::vector<uint32_t> visited(nodes.size(), 0);
-        // std::vector<uint32_t> current_clique;
-        // std::stack<uint32_t> stack;
-        // for (int i = 0; i < nodes.size(); i++)
-        // {
-        //     if (visited[i] == 0)
-        //     {
-        //         visited[i] = 1;
-        //         current_clique.push_back(nodes[i]);
-        //         stack.push(i);
-        //         while (!stack.empty())
-        //         {
-        //             uint32_t current = stack.top();
-        //             stack.pop();
-        //             const std::unordered_set<uint32_t> &adjacencies = adjacency.getAdjacencies(current);
-        //             for (const uint32_t &i : adjacencies)
-        //             {
-        //                 if (visited[i] == 0)
-        //                 {
-        //                     bool is_connected_to_all = true;
-        //                     for (const uint32_t &node : current_clique)
-        //                     {
-        //                         if (!adjacency.areAdjacent(node, nodes[i]))
-        //                         {
-        //                             is_connected_to_all = false;
-        //                             break;
-        //                         }
-        //                     }
-        //                     if (is_connected_to_all)
-        //                     {
-        //                         visited[i] = 1;
-        //                         current_clique.push_back(nodes[i]);
-        //                         stack.push(i);
-        //                     }
-        //                 }
-        //             }
-        //         }
-        //         cliques.push_back(current_clique);
-        //         current_clique.clear();
-        //     }
-        // }
-
-        // return getLargestListSize(cliques);
-        return 0;
     }
 
     uint32_t findMaximalCliqueTTT()
@@ -610,15 +555,12 @@ void findMaximalClique(const uint32_t n, const uint32_t d, const uint32_t m, std
         max = g.findMaximalCliqueHeuristicBFS();
         break;
     case 3:
-        max = g.findMaximalCliqueHeuristicDFS();
-        break;
-    case 4:
         max = g.findMaximalCliqueTTT();
         break;
-    case 5:
+    case 4:
         max = g.findMaximalCliqueBronKerboschSimple();
         break;
-    case 6:
+    case 5:
         max = g.findMaximalCliqueBronKerboschPivot();
         break;
     }
@@ -645,10 +587,9 @@ int main()
     std::cout << "Enter a to create adjacency matrix. y/n" << std::endl;
     std::cout << "Enter 1 for brute force." << std::endl;
     std::cout << "Enter 2 for Heuristic Breadth-First Search." << std::endl;
-    std::cout << "Enter 3 for Heuristic Depth-First Search." << std::endl;
-    std::cout << "Enter 4 for Heuristic Tomita, Tanaka, and Takahashi (TTT)." << std::endl;
-    std::cout << "Enter 5 for Simple Bron-Kerbosch." << std::endl;
-    std::cout << "Enter 6 for Pivot Bron-Kerbosch." << std::endl;
+    std::cout << "Enter 3 for Heuristic Tomita, Tanaka, and Takahashi (TTT)." << std::endl;
+    std::cout << "Enter 4 for Simple Bron-Kerbosch." << std::endl;
+    std::cout << "Enter 5 for Pivot Bron-Kerbosch." << std::endl;
     std::cout << "Enter unvalid numbers to exit." << std::endl;
 
     while (true)
@@ -705,7 +646,7 @@ int main()
             }
         }
 
-        if (!isNumber || stoi(temp) < 1 || stoi(temp) > 6)
+        if (!isNumber || stoi(temp) < 1 || stoi(temp) > 5)
         {
             break;
         }
