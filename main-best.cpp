@@ -690,7 +690,7 @@ void findMaximalClique(const uint32_t n, const uint32_t d, const uint32_t m, std
 
     if (a == "y" || a == "Y")
     {
-        double elapsedSecondsGraphAndAdjacency = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000000.0;
+        double elapsedSecondsGraphAndAdjacency = std::chrono::duration_cast<std::chrono::microseconds>(midpoint - start).count() / 1000000.0;
         std::cout << "Time spent creating graph and adjacencies: " << elapsedSecondsGraphAndAdjacency << "s" << std::endl;
     }
 
@@ -720,7 +720,17 @@ int main()
         std::cout << "Enter n: ";
         std::getline(std::cin, temp);
 
-        if (stoi(temp) < 1)
+        bool isNumber = true;
+        for (char c : temp)
+        {
+            if (!isdigit(c))
+            {
+                isNumber = false;
+                break;
+            }
+        }
+
+        if (!isNumber || stoi(temp) < 1)
         {
             break;
         }
@@ -729,7 +739,16 @@ int main()
         std::cout << "Enter d: ";
         std::getline(std::cin, temp);
 
-        if (stoi(temp) < 1)
+        for (char c : temp)
+        {
+            if (!isdigit(c))
+            {
+                isNumber = false;
+                break;
+            }
+        }
+
+        if (!isNumber || stoi(temp) < 1)
         {
             break;
         }
@@ -738,7 +757,16 @@ int main()
         std::cout << "Enter m: ";
         std::getline(std::cin, temp);
 
-        if (stoi(temp) < 1 || stoi(temp) > 6)
+        for (char c : temp)
+        {
+            if (!isdigit(c))
+            {
+                isNumber = false;
+                break;
+            }
+        }
+
+        if (!isNumber || stoi(temp) < 1 || stoi(temp) > 6)
         {
             break;
         }
