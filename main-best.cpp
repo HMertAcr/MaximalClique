@@ -2,9 +2,9 @@
 #include <string>
 #include <vector>
 #include <unordered_set>
-#include <algorithm>
 #include <stack>
-#include <tuple>
+#include <queue>
+#include <algorithm>
 #include <chrono>
 
 std::string binaryRep(const uint32_t bit, const uint32_t bitlength)
@@ -25,6 +25,14 @@ uint32_t hammingDistance(const uint32_t bit_a, const uint32_t bit_b)
     return __builtin_popcount(bit_a ^ bit_b);
 }
 // std::bitset::count might be better
+
+template <typename Container>
+uint32_t getLargestListSize(const Container &cliques)
+{
+    return std::max_element(cliques.begin(), cliques.end(), [](const auto &a, const auto &b)
+                            { return a.size() < b.size(); })
+        ->size();
+}
 
 class Adjacency
 {
@@ -79,7 +87,7 @@ public:
     }
 
     // Returns the set of d-adjacent nodes for the given node 'x'.
-    const std::unordered_set<uint32_t> &GetAdjacencies(uint32_t x)
+    const std::unordered_set<uint32_t> &getAdjacencies(uint32_t x)
     {
         if (!isAdjacencyCreated)
         {
@@ -108,7 +116,7 @@ public:
         {
             return hammingDistance(a, b) >= distance;
         }
-        //could just calculate hamming distance even might be faster
+        // could just calculate hamming distance even might be faster
     }
 
 private:
@@ -137,7 +145,6 @@ public:
         }
 
         adjacency = Adjacency(bitlength, distance);
-
     }
 
     // Copy constructor
@@ -246,7 +253,7 @@ public:
 
     bool checkMaxmialClique(std::vector<uint32_t> &clique)
     {
-        const std::unordered_set<uint32_t> &adjacencies = adjacency.GetAdjacencies(clique[0]);
+        const std::unordered_set<uint32_t> &adjacencies = adjacency.getAdjacencies(clique[0]);
         for (const uint32_t &node : adjacencies)
         {
             if (std::find(clique.begin(), clique.end(), node) == clique.end())
@@ -276,138 +283,158 @@ public:
             }
         }
 
-        uint32_t max = 0;
-        for (uint32_t i = 0; i < subsets.size(); i++)
-        {
-            if (subsets[i].size() > max)
-            {
-                max = subsets[i].size();
-            }
-        }
-
-        return max;
+        return getLargestListSize(subsets);
     }
 
     uint32_t findMaximalCliqueHeuristicBFS()
     {
-        std::vector<std::vector<uint32_t>> cliques;
-        std::vector<uint32_t> visited(nodes.size(), 0);
-        std::vector<uint32_t> current_clique;
-        std::vector<uint32_t> queue = {0};
-        visited[0] = 1;
-        current_clique.push_back(nodes[0]);
+        std::vector<std::unordered_set<uint32_t>> cliques;
 
-        while (!queue.empty())
+        for (uint32_t start_node : nodes)
         {
-            uint32_t current = queue.back();
-            queue.pop_back();
-            for (int i = 0; i < nodes.size(); i++)
+            // Initialize the queue with the starting node
+            std::queue<uint32_t> node_queue({start_node});
+            std::unordered_set<uint32_t> clique_nodes({start_node});
+
+            while (!node_queue.empty())
             {
-                if (visited[i] == 0 && adjacency.areAdjacent(current, nodes[i]))
+                uint32_t current_node = node_queue.front();
+                node_queue.pop();
+
+                // Iterate through all the neighbors of the current node
+                for (uint32_t neighbor : adjacency.getAdjacencies(current_node))
                 {
-                    bool is_connected_to_all = true;
-                    for (const uint32_t &node : current_clique)
+                    // If the neighbor is already in the clique, skip it
+                    if (clique_nodes.count(neighbor))
+                        continue;
+
+                    // If the neighbor is adjacent to all the nodes in the clique, add it to the clique
+                    bool is_adjacent_to_all = true;
+                    for (uint32_t clique_node : clique_nodes)
                     {
-                        if (!adjacency.areAdjacent(current, nodes[i]))
+                        if (!adjacency.areAdjacent(neighbor, clique_node))
                         {
-                            is_connected_to_all = false;
+                            is_adjacent_to_all = false;
                             break;
                         }
                     }
-                    if (is_connected_to_all)
+                    if (is_adjacent_to_all)
                     {
-                        visited[i] = 1;
-                        current_clique.push_back(nodes[i]);
-                        queue.push_back(nodes[i]);
+                        clique_nodes.insert(neighbor);
+                        node_queue.push(neighbor);
                     }
                 }
             }
-            if (queue.empty())
+
+            // Update the maximum clique size if the current clique is larger
+            cliques.push_back(clique_nodes);
+        }
+
+        return getLargestListSize(cliques);
+    }
+
+    uint32_t
+    findMaximalCliqueHeuristicDFS()
+    {
+        // std::vector<std::vector<uint32_t>> cliques;
+        // std::vector<uint32_t> visited(nodes.size(), 0);
+        // std::vector<uint32_t> current_clique;
+        // std::stack<uint32_t> stack;
+        // for (int i = 0; i < nodes.size(); i++)
+        // {
+        //     if (visited[i] == 0)
+        //     {
+        //         visited[i] = 1;
+        //         current_clique.push_back(nodes[i]);
+        //         stack.push(i);
+        //         while (!stack.empty())
+        //         {
+        //             uint32_t current = stack.top();
+        //             stack.pop();
+        //             const std::unordered_set<uint32_t> &adjacencies = adjacency.getAdjacencies(current);
+        //             for (const uint32_t &i : adjacencies)
+        //             {
+        //                 if (visited[i] == 0)
+        //                 {
+        //                     bool is_connected_to_all = true;
+        //                     for (const uint32_t &node : current_clique)
+        //                     {
+        //                         if (!adjacency.areAdjacent(node, nodes[i]))
+        //                         {
+        //                             is_connected_to_all = false;
+        //                             break;
+        //                         }
+        //                     }
+        //                     if (is_connected_to_all)
+        //                     {
+        //                         visited[i] = 1;
+        //                         current_clique.push_back(nodes[i]);
+        //                         stack.push(i);
+        //                     }
+        //                 }
+        //             }
+        //         }
+        //         cliques.push_back(current_clique);
+        //         current_clique.clear();
+        //     }
+        // }
+
+        // return getLargestListSize(cliques);
+        return 0;
+    }
+
+    uint32_t findMaximalCliqueTTT()
+    {
+        std::vector<std::unordered_set<uint32_t>> cliques;
+        std::vector<uint32_t> remaining_nodes = nodes;
+
+        while (!remaining_nodes.empty())
+        {
+            // Choose a vertex with the maximum degree.
+            uint32_t max_degree_vertex = remaining_nodes[0];
+
+            uint32_t max_degree = adjacency.getAdjacencies(max_degree_vertex).size();
+
+            for (uint32_t v : remaining_nodes)
             {
-                cliques.push_back(current_clique);
-                current_clique.clear();
-                for (int i = 0; i < nodes.size(); i++)
+                uint32_t degree = adjacency.getAdjacencies(v).size();
+                if (degree > max_degree)
                 {
-                    if (visited[i] == 0)
+                    max_degree_vertex = v;
+                    max_degree = degree;
+                }
+            }
+
+            remaining_nodes.erase(std::find(remaining_nodes.begin(), remaining_nodes.end(), max_degree_vertex));
+
+            // Initialize the clique to be {v}.
+            std::unordered_set<uint32_t> clique{max_degree_vertex};
+
+            // Add all vertices that are adjacent to all vertices in the clique.
+            for (uint32_t u : remaining_nodes)
+            {
+
+                bool is_adjacent_to_all_vertices = true;
+                for (uint32_t v : clique)
+                {
+                    if (!adjacency.areAdjacent(u, v))
                     {
-                        queue.push_back(i);
-                        visited[i] = 1;
-                        current_clique.push_back(nodes[i]);
+                        is_adjacent_to_all_vertices = false;
                         break;
                     }
                 }
-            }
-        }
 
-        uint32_t max = 0;
-
-        for (int i = 0; i < cliques.size(); i++)
-        {
-            if (cliques[i].size() > max)
-            {
-                max = cliques[i].size();
-            }
-        }
-
-        return max;
-    }
-
-    uint32_t findMaximalCliqueHeuristicDFS()
-    {
-        std::vector<std::vector<uint32_t>> cliques;
-        std::vector<uint32_t> visited(nodes.size(), 0);
-        std::vector<uint32_t> current_clique;
-
-        for (uint32_t start = 0; start < nodes.size(); start++)
-        {
-            if (visited[start] == 0)
-            {
-                std::vector<uint32_t> stack = {start};
-                visited[start] = 1;
-                current_clique.push_back(start);
-                while (!stack.empty())
+                if (is_adjacent_to_all_vertices)
                 {
-                    uint32_t current = stack.back();
-                    stack.pop_back();
-                    const std::unordered_set<uint32_t> &adjacencies = adjacency.GetAdjacencies(current);
-                    for (const uint32_t &i : adjacencies)
-                    {
-                        if (visited[i] == 0)
-                        {
-                            bool is_connected_to_all = true;
-                            for (const uint32_t &node : current_clique)
-                            {
-                                if (!adjacency.areAdjacent(nodes[i], node))
-                                {
-                                    is_connected_to_all = false;
-                                    break;
-                                }
-                            }
-                            if (is_connected_to_all)
-                            {
-                                visited[i] = 1;
-                                current_clique.push_back(nodes[i]);
-                                stack.push_back(i);
-                            }
-                        }
-                    }
+                    clique.insert(u);
                 }
-                cliques.push_back(current_clique);
-                current_clique.clear();
             }
+
+            // Add the clique to the set of cliques.
+            cliques.push_back(clique);
         }
 
-        uint32_t max = 0;
-
-        for (int i = 0; i < cliques.size(); i++)
-        {
-            if (cliques[i].size() > max)
-            {
-                max = cliques[i].size();
-            }
-        }
-
-        return max;
+        return getLargestListSize(cliques);
     }
 
     uint32_t findMaximalCliqueBronKerboschSimple()
@@ -419,16 +446,7 @@ public:
 
         findMaximalCliqueBronKerboschSimple(R, P, X, maximalCliques);
 
-        uint32_t max = 0;
-        for (uint32_t i = 0; i < maximalCliques.size(); i++)
-        {
-            if (maximalCliques[i].size() > max)
-            {
-                max = maximalCliques[i].size();
-            }
-        }
-
-        return max;
+        return getLargestListSize(maximalCliques);
     }
 
     void findMaximalCliqueBronKerboschSimple(std::vector<uint32_t> &R, std::vector<uint32_t> &P, std::vector<uint32_t> &X, std::vector<std::vector<uint32_t>> &maximalCliques)
@@ -482,22 +500,62 @@ public:
 
         findMaximalCliqueBronKerboschPivot(R, P, X, maximalCliques);
 
-        uint32_t max = 0;
-        for (uint32_t i = 0; i < maximalCliques.size(); i++)
+        return getLargestListSize(maximalCliques);
+    }
+
+    void findMaximalCliqueBronKerboschPivot(std::vector<uint32_t> &R, std::vector<uint32_t> &P, std::vector<uint32_t> &X, std::vector<std::vector<uint32_t>> &maximalCliques)
+    {
+        if (P.empty() && X.empty())
         {
-            if (maximalCliques[i].size() > max)
+            maximalCliques.push_back(R);
+        }
+        else
+        {
+            if (!P.empty())
             {
-                max = maximalCliques[i].size();
+                uint32_t pivot = choosePivot(P, X);
+
+                std::vector<uint32_t> P_without_neighbors_of_pivot;
+                for (uint32_t v : P)
+                {
+                    if (!adjacency.areAdjacent(pivot, v))
+                    {
+                        P_without_neighbors_of_pivot.push_back(v);
+                    }
+                }
+
+                for (uint32_t v : P_without_neighbors_of_pivot)
+                {
+                    std::vector<uint32_t> newR = R;
+                    newR.push_back(v);
+                    std::vector<uint32_t> newP;
+                    std::vector<uint32_t> newX;
+                    for (uint32_t u : P)
+                    {
+                        if (adjacency.areAdjacent(v, u))
+                        {
+                            newP.push_back(u);
+                        }
+                    }
+                    for (uint32_t u : X)
+                    {
+                        if (adjacency.areAdjacent(v, u))
+                        {
+                            newX.push_back(u);
+                        }
+                    }
+                    findMaximalCliqueBronKerboschPivot(newR, newP, newX, maximalCliques);
+                    P.erase(std::remove(P.begin(), P.end(), v), P.end());
+                    X.push_back(v);
+                }
             }
         }
-
-        return max;
     }
 
     uint32_t choosePivot(const std::vector<uint32_t> &P, const std::vector<uint32_t> &X)
     {
         uint32_t pivot = P[0];
-        uint32_t minNeighbors = UINT32_MAX;
+        uint32_t maxNeighbors = 0;
         for (uint32_t u : P)
         {
             uint32_t neighbors = 0;
@@ -515,132 +573,13 @@ public:
                     neighbors++;
                 }
             }
-            if (neighbors < minNeighbors)
+            if (neighbors > maxNeighbors)
             {
                 pivot = u;
-                minNeighbors = neighbors;
+                maxNeighbors = neighbors;
             }
         }
         return pivot;
-    }
-
-    void findMaximalCliqueBronKerboschPivot(std::vector<uint32_t> &R, std::vector<uint32_t> &P, std::vector<uint32_t> &X, std::vector<std::vector<uint32_t>> &maximalCliques)
-    {
-        if (P.empty() && X.empty())
-        {
-            maximalCliques.push_back(R);
-        }
-        else
-        {
-            uint32_t pivot = choosePivot(P, X);
-            std::vector<uint32_t> P1;
-            std::vector<uint32_t> X1;
-            for (uint32_t v : P)
-            {
-                if (adjacency.areAdjacent(pivot, v))
-                {
-                    P1.push_back(v);
-                }
-            }
-            for (uint32_t v : X)
-            {
-                if (adjacency.areAdjacent(pivot, v))
-                {
-                    X1.push_back(v);
-                }
-            }
-            findMaximalCliqueBronKerboschPivot(R, P1, X1, maximalCliques);
-            for (uint32_t u : P)
-            {
-                if (u != pivot)
-                {
-                    std::vector<uint32_t> newR = R;
-                    newR.push_back(u);
-                    std::vector<uint32_t> newP;
-                    std::vector<uint32_t> newX;
-                    for (uint32_t v : P)
-                    {
-                        if (adjacency.areAdjacent(u, v))
-                        {
-                            newP.push_back(v);
-                        }
-                    }
-                    for (uint32_t v : X)
-                    {
-                        if (adjacency.areAdjacent(u, v))
-                        {
-                            newX.push_back(v);
-                        }
-                    }
-                    findMaximalCliqueBronKerboschPivot(newR, newP, newX, maximalCliques);
-                    P.erase(std::remove(P.begin(), P.end(), u), P.end());
-                    X.push_back(u);
-                }
-            }
-        }
-    }
-
-    uint32_t findMaximalCliqueTTT()
-    {
-        std::vector<std::unordered_set<uint32_t>> cliques;
-        std::vector<uint32_t> remaining_nodes = nodes;
-
-        while (!remaining_nodes.empty())
-        {
-            // Choose a vertex with the maximum degree.
-            uint32_t max_degree_vertex = remaining_nodes[0];
-
-            uint32_t max_degree = adjacency.GetAdjacencies(max_degree_vertex).size();
-
-            for (uint32_t v : remaining_nodes)
-            {
-                uint32_t degree = adjacency.GetAdjacencies(v).size();
-                if (degree > max_degree)
-                {
-                    max_degree_vertex = v;
-                    max_degree = degree;
-                }
-            }
-
-            remaining_nodes.erase(std::find(remaining_nodes.begin(), remaining_nodes.end(), max_degree_vertex));
-
-            // Initialize the clique to be {v}.
-            std::unordered_set<uint32_t> clique{max_degree_vertex};
-
-            // Add all vertices that are adjacent to all vertices in the clique.
-            for (uint32_t u : remaining_nodes)
-            {
-
-                bool is_adjacent_to_all_vertices = true;
-                for (uint32_t v : clique)
-                {
-                    if (!adjacency.areAdjacent(u, v))
-                    {
-                        is_adjacent_to_all_vertices = false;
-                        break;
-                    }
-                }
-
-                if (is_adjacent_to_all_vertices)
-                {
-                    clique.insert(u);
-                }
-            }
-
-            // Add the clique to the set of cliques.
-            cliques.push_back(clique);
-        }
-
-        uint32_t max = 0;
-        for (uint32_t i = 0; i < cliques.size(); i++)
-        {
-            if (cliques[i].size() > max)
-            {
-                max = cliques[i].size();
-            }
-        }
-
-        return max;
     }
 };
 
@@ -674,13 +613,13 @@ void findMaximalClique(const uint32_t n, const uint32_t d, const uint32_t m, std
         max = g.findMaximalCliqueHeuristicDFS();
         break;
     case 4:
-        max = g.findMaximalCliqueBronKerboschSimple();
+        max = g.findMaximalCliqueTTT();
         break;
     case 5:
-        max = g.findMaximalCliqueBronKerboschPivot();
+        max = g.findMaximalCliqueBronKerboschSimple();
         break;
     case 6:
-        max = g.findMaximalCliqueTTT();
+        max = g.findMaximalCliqueBronKerboschPivot();
         break;
     }
 
@@ -707,9 +646,9 @@ int main()
     std::cout << "Enter 1 for brute force." << std::endl;
     std::cout << "Enter 2 for Heuristic Breadth-First Search." << std::endl;
     std::cout << "Enter 3 for Heuristic Depth-First Search." << std::endl;
-    std::cout << "Enter 4 for Simple Bron-Kerbosch." << std::endl;
-    std::cout << "Enter 5 for Pivot Bron-Kerbosch." << std::endl;
-    std::cout << "Enter 6 for Tomita, Tanaka, and Takahashi (TTT)." << std::endl;
+    std::cout << "Enter 4 for Heuristic Tomita, Tanaka, and Takahashi (TTT)." << std::endl;
+    std::cout << "Enter 5 for Simple Bron-Kerbosch." << std::endl;
+    std::cout << "Enter 6 for Pivot Bron-Kerbosch." << std::endl;
     std::cout << "Enter unvalid numbers to exit." << std::endl;
 
     while (true)

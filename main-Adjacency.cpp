@@ -68,7 +68,7 @@ public:
     }
 
     // Returns the set of d-adjacent nodes for the given node 'x'.
-    const std::unordered_set<uint32_t> &GetAdjacencies(uint32_t x) const
+    const std::unordered_set<uint32_t> &getAdjacencies(uint32_t x) const
     {
         return adjacencies.at(x);
     }
@@ -213,7 +213,7 @@ public:
 
     bool checkMaxmialClique(std::vector<uint32_t> &clique)
     {
-        const std::unordered_set<uint32_t> &adjacencies = adjacency.GetAdjacencies(clique[0]);
+        const std::unordered_set<uint32_t> &adjacencies = adjacency.getAdjacencies(clique[0]);
         for (const uint32_t &node : adjacencies)
         {
             if (std::find(clique.begin(), clique.end(), node) == clique.end())
@@ -268,7 +268,7 @@ public:
         {
             uint32_t current = queue.front();
             queue.erase(queue.begin());
-            const std::unordered_set<uint32_t> &adjacencies = adjacency.GetAdjacencies(current);
+            const std::unordered_set<uint32_t> &adjacencies = adjacency.getAdjacencies(current);
             for (const uint32_t &i : adjacencies)
             {
                 if (visited[i] == 0)
@@ -324,7 +324,7 @@ public:
                 {
                     uint32_t current = stack.back();
                     stack.pop_back();
-                    const std::unordered_set<uint32_t> &adjacencies = adjacency.GetAdjacencies(current);
+                    const std::unordered_set<uint32_t> &adjacencies = adjacency.getAdjacencies(current);
                     for (const uint32_t &i : adjacencies)
                     {
                         if (visited[i] == 0)
@@ -545,11 +545,11 @@ public:
             // Choose a vertex with the maximum degree.
             uint32_t max_degree_vertex = remaining_nodes[0];
 
-            uint32_t max_degree = adjacency.GetAdjacencies(max_degree_vertex).size();
+            uint32_t max_degree = adjacency.getAdjacencies(max_degree_vertex).size();
 
             for (uint32_t v : remaining_nodes)
             {
-                uint32_t degree = adjacency.GetAdjacencies(v).size();
+                uint32_t degree = adjacency.getAdjacencies(v).size();
                 if (degree > max_degree)
                 {
                     max_degree_vertex = v;
