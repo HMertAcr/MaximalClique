@@ -545,12 +545,6 @@ void findMaximalClique(const uint32_t n, const uint32_t d, const uint32_t m, con
     }
     timepoint_t midpoint = clock_t::now();
 
-    if (a == 'y' || a == 'Y')
-    {
-        double elapsedSecondsGraphAndAdjacency = std::chrono::duration_cast<std::chrono::microseconds>(midpoint - start).count() / 1000000.0;
-        std::cout << "Graph and adjacencies created in: " << elapsedSecondsGraphAndAdjacency << "s" << std::endl;
-    }
-
     uint32_t max = 0;
 
     switch (m)
@@ -573,6 +567,12 @@ void findMaximalClique(const uint32_t n, const uint32_t d, const uint32_t m, con
     }
 
     timepoint_t end = clock_t::now();
+
+    if (a == 'y' || a == 'Y')
+    {
+        double elapsedSecondsGraphAndAdjacency = std::chrono::duration_cast<std::chrono::microseconds>(midpoint - start).count() / 1000000.0;
+        std::cout << "Adjacencies created in: " << elapsedSecondsGraphAndAdjacency << "s" << std::endl;
+    }
 
     double elapsedSecondsAlgorithm = std::chrono::duration_cast<std::chrono::microseconds>(end - midpoint).count() / 1000000.0;
     std::cout << "Algorithm time: " << elapsedSecondsAlgorithm << "s" << std::endl;
