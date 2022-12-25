@@ -53,7 +53,7 @@ public:
         uint32_t s = (1 << bitlength);
         for (uint32_t i = 0; i < s; i++)
         {
-            adjacencies.push_back(std::unordered_set<uint32_t>());
+            adjacencies.push_back(std::vector<uint32_t>());
             adjacencies[i].reserve(s);
         }
     }
@@ -79,8 +79,8 @@ public:
             {
                 if (hammingDistance(i, j) >= distance)
                 {
-                    adjacencies[i].insert(j);
-                    adjacencies[j].insert(i);
+                    adjacencies[i].push_back(j);
+                    adjacencies[j].push_back(i);
                 }
             }
         }
@@ -88,7 +88,7 @@ public:
     }
 
     // Returns the set of d-adjacent nodes for the given node 'x'.
-    const std::unordered_set<uint32_t> &getAdjacencies(uint32_t x)
+    const std::vector<uint32_t> &getAdjacencies(uint32_t x)
     {
         if (!isAdjacencyCreated)
         {
@@ -98,30 +98,30 @@ public:
                 {
                     if (hammingDistance(x, i) >= distance)
                     {
-                        adjacencies[x].insert(i);
+                        adjacencies[x].push_back(i);
                     }
                 }
             }
         }
-        return adjacencies.at(x);
+        return adjacencies[x];
     }
 
     // Returns true if nodes 'a' and 'b' are d-adjacent, false otherwise.
     bool areAdjacent(uint32_t a, uint32_t b) const
     {
-        if (isAdjacencyCreated)
-        {
-            return adjacencies.at(a).count(b) > 0;
-        }
-        else
-        {
-            return hammingDistance(a, b) >= distance;
-        }
-        // could just calculate hamming distance even might be faster
+        return hammingDistance(a, b) >= distance;
+        // if (isAdjacencyCreated)
+        // {
+        //     return adjacencies.at(a).count(b) > 0;
+        // }
+        // else
+        // {
+        //     return hammingDistance(a, b) >= distance;
+        // }
     }
 
 private:
-    std::vector<std::unordered_set<uint32_t>> adjacencies;
+    std::vector<std::vector<uint32_t>> adjacencies;
 };
 
 class graph
@@ -254,7 +254,7 @@ public:
 
     bool checkMaxmialClique(std::vector<uint32_t> &clique)
     {
-        const std::unordered_set<uint32_t> &adjacencies = adjacency.getAdjacencies(clique[0]);
+        const std::vector<uint32_t> &adjacencies = adjacency.getAdjacencies(clique[0]);
         for (const uint32_t &node : adjacencies)
         {
             if (std::find(clique.begin(), clique.end(), node) == clique.end())
@@ -545,6 +545,12 @@ void findMaximalClique(const uint32_t n, const uint32_t d, const uint32_t m, con
     }
     timepoint_t midpoint = clock_t::now();
 
+    if (a == 'y' || a == 'Y')
+    {
+        double elapsedSecondsGraphAndAdjacency = std::chrono::duration_cast<std::chrono::microseconds>(midpoint - start).count() / 1000000.0;
+        std::cout << "Graph and adjacencies created in: " << elapsedSecondsGraphAndAdjacency << "s" << std::endl;
+    }
+
     uint32_t max = 0;
 
     switch (m)
@@ -568,16 +574,10 @@ void findMaximalClique(const uint32_t n, const uint32_t d, const uint32_t m, con
 
     timepoint_t end = clock_t::now();
 
-    std::cout << "Maximum Clique Size: " << max << std::endl;
-
-    if (a == 'y' || a == 'Y')
-    {
-        double elapsedSecondsGraphAndAdjacency = std::chrono::duration_cast<std::chrono::microseconds>(midpoint - start).count() / 1000000.0;
-        std::cout << "Time spent creating graph and adjacencies: " << elapsedSecondsGraphAndAdjacency << "s" << std::endl;
-    }
-
     double elapsedSecondsAlgorithm = std::chrono::duration_cast<std::chrono::microseconds>(end - midpoint).count() / 1000000.0;
     std::cout << "Algorithm time: " << elapsedSecondsAlgorithm << "s" << std::endl;
+
+    std::cout << "Maximum Clique Size: " << max << std::endl;
 }
 
 int main()
