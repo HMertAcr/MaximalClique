@@ -2,7 +2,6 @@
 #include <string>
 #include <sstream>
 #include <vector>
-#include <unordered_set>
 #include <queue>
 #include <algorithm>
 #include <chrono>
@@ -70,20 +69,23 @@ public:
         adjacencies.clear();
     }
 
-    void findAdjacencies()
+    void createAdjacencies()
     {
-        for (uint32_t i = 0; i < adjacencies.size(); i++)
+        if (!isAdjacencyCreated)
         {
-            for (uint32_t j = i + 1; j < adjacencies.size(); j++)
+            for (uint32_t i = 0; i < adjacencies.size(); i++)
             {
-                if (hammingDistance(i, j) >= distance)
+                for (uint32_t j = i + 1; j < adjacencies.size(); j++)
                 {
-                    adjacencies[i].push_back(j);
-                    adjacencies[j].push_back(i);
+                    if (hammingDistance(i, j) >= distance)
+                    {
+                        adjacencies[i].push_back(j);
+                        adjacencies[j].push_back(i);
+                    }
                 }
             }
+            isAdjacencyCreated = true;
         }
-        isAdjacencyCreated = true;
     }
 
     // Returns the set of d-adjacent nodes for the given node 'x'.
@@ -109,14 +111,6 @@ public:
     bool areAdjacent(uint32_t a, uint32_t b) const
     {
         return hammingDistance(a, b) >= distance;
-        // if (isAdjacencyCreated)
-        // {
-        //     return adjacencies.at(a).count(b) > 0;
-        // }
-        // else
-        // {
-        //     return hammingDistance(a, b) >= distance;
-        // }
     }
 
 private:
@@ -160,11 +154,6 @@ public:
     ~graph()
     {
         nodes.clear();
-    }
-
-    void createAdjacency()
-    {
-        adjacency.findAdjacencies();
     }
 
     static bool isSameNodes(const std::vector<uint32_t> &nodes_a, const std::vector<uint32_t> &nodes_b)
@@ -272,6 +261,9 @@ public:
 
     uint32_t findMaximalCliqueBruteForce()
     {
+
+        adjacency.createAdjacencies();
+
         std::vector<std::vector<uint32_t>> subsets = getSubsets(nodes);
 
         for (uint32_t i = 0; i < subsets.size(); i++)
@@ -288,12 +280,12 @@ public:
 
     uint32_t findMaximalCliqueHeuristicBFS()
     {
-        std::vector<std::unordered_set<uint32_t>> cliques;
+        std::vector<std::vector<uint32_t>> cliques;
 
         for (uint32_t start_node : nodes)
         {
             std::queue<uint32_t> node_queue({start_node});
-            std::unordered_set<uint32_t> clique_nodes({start_node});
+            std::vector<uint32_t> clique_nodes({start_node});
 
             while (!node_queue.empty())
             {
@@ -302,9 +294,10 @@ public:
 
                 for (uint32_t neighbor : adjacency.getAdjacencies(current_node))
                 {
-                    if (clique_nodes.count(neighbor))
+                    if (std::find(clique_nodes.begin(), clique_nodes.end(), neighbor) != clique_nodes.end())
+                    {
                         continue;
-
+                    }
                     bool is_adjacent_to_all = true;
                     for (uint32_t clique_node : clique_nodes)
                     {
@@ -316,7 +309,7 @@ public:
                     }
                     if (is_adjacent_to_all)
                     {
-                        clique_nodes.insert(neighbor);
+                        clique_nodes.push_back(neighbor);
                         node_queue.push(neighbor);
                     }
                 }
@@ -330,7 +323,7 @@ public:
 
     uint32_t findMaximalCliqueTTT()
     {
-        std::vector<std::unordered_set<uint32_t>> cliques;
+        std::vector<std::vector<uint32_t>> cliques;
         std::vector<uint32_t> remaining_nodes = nodes;
 
         while (!remaining_nodes.empty())
@@ -353,7 +346,7 @@ public:
             remaining_nodes.erase(std::find(remaining_nodes.begin(), remaining_nodes.end(), max_degree_vertex));
 
             // Initialize the clique to be {v}.
-            std::unordered_set<uint32_t> clique{max_degree_vertex};
+            std::vector<uint32_t> clique{max_degree_vertex};
 
             // Add all vertices that are adjacent to all vertices in the clique.
             for (uint32_t u : remaining_nodes)
@@ -371,7 +364,7 @@ public:
 
                 if (is_adjacent_to_all_vertices)
                 {
-                    clique.insert(u);
+                    clique.push_back(u);
                 }
             }
 
@@ -528,7 +521,7 @@ public:
     }
 };
 
-void findMaximalClique(const uint32_t n, const uint32_t d, const uint32_t m, const char a)
+void findMaximalClique(const uint32_t n, const uint32_t d, const uint32_t m)
 {
 
     using clock_t = std::chrono::high_resolution_clock;
@@ -537,12 +530,6 @@ void findMaximalClique(const uint32_t n, const uint32_t d, const uint32_t m, con
     timepoint_t start = clock_t::now();
 
     graph g(n, d);
-
-    if (a == 'y' || a == 'Y')
-    {
-        g.createAdjacency();
-    }
-    timepoint_t midpoint = clock_t::now();
 
     uint32_t max = 0;
 
@@ -567,15 +554,8 @@ void findMaximalClique(const uint32_t n, const uint32_t d, const uint32_t m, con
 
     timepoint_t end = clock_t::now();
 
-    if (a == 'y' || a == 'Y')
-    {
-        double elapsedSecondsGraphAndAdjacency = std::chrono::duration_cast<std::chrono::microseconds>(midpoint - start).count() / 1000000.0;
-        std::cout << "Adjacencies created in: " << elapsedSecondsGraphAndAdjacency << "s" << std::endl;
-    }
-
-    double elapsedSecondsAlgorithm = std::chrono::duration_cast<std::chrono::microseconds>(end - midpoint).count() / 1000000.0;
+    double elapsedSecondsAlgorithm = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000000.0;
     std::cout << "Algorithm time: " << elapsedSecondsAlgorithm << "s" << std::endl;
-
     std::cout << "Maximum Clique Size: " << max << std::endl;
 }
 
@@ -596,7 +576,6 @@ int main()
     {
         std::string temp;
         int n, d, m;
-        char a;
 
         std::cout << "Enter n: ";
         std::getline(std::cin, temp);
@@ -625,15 +604,7 @@ int main()
             break;
         }
 
-        std::cout << "Enter a: ";
-        std::getline(std::cin, temp);
-        if (temp != "y" && temp != "Y" && temp != "n" && temp != "N")
-        {
-            break;
-        }
-        a = temp[0];
-
-        findMaximalClique(n, d, m, a);
+        findMaximalClique(n, d, m);
     }
 
     return 0;
