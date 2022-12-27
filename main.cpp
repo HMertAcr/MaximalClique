@@ -540,8 +540,8 @@ public:
 
     // Recursive function to find all maximal cliques containing clique "K"
     // and vertices from "cand" but not containing any vertex from "fini"
-    void TTT(std::vector<int> K,
-             std::vector<int> cand, std::vector<int> fini,
+    void TTT(std::vector<int> &K,
+             std::vector<int> &cand, std::vector<int> &fini,
              std::vector<std::vector<int>> &maximal_cliques)
     {
         // If cand and fini are both empty, output clique K and return
@@ -605,8 +605,7 @@ public:
 
         for (int q : ext)
         {
-            std::vector<int> Kq(K);
-            Kq.push_back(q);
+            K.push_back(q);
             std::vector<int> candq;
             std::vector<int> finiq;
             for (int v : cand)
@@ -623,9 +622,10 @@ public:
                     finiq.push_back(v);
                 }
             }
-            TTT(Kq, candq, finiq, maximal_cliques);
+            TTT(K, candq, finiq, maximal_cliques);
             cand.erase(std::remove(cand.begin(), cand.end(), q), cand.end());
             fini.push_back(q);
+            K.pop_back();
         }
     }
 };
