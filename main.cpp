@@ -321,7 +321,7 @@ public:
         return getLargestListSize(cliques);
     }
 
-    uint32_t findMaximalCliqueTTT()
+    uint32_t findMaximalCliqueGreedy()
     {
         std::vector<std::vector<uint32_t>> cliques;
         std::vector<uint32_t> remaining_nodes = nodes;
@@ -519,6 +519,115 @@ public:
         }
         return pivot;
     }
+
+    uint32_t findMaximalCliqueTTT()
+    {
+        std::vector<std::vector<int>> maximal_cliques;
+        std::vector<int> remaining_nodes(nodes.begin(), nodes.end());
+
+        // Initialize clique to be empty
+        std::vector<int> K;
+        // Initialize cand to be the set of all nodes
+        std::vector<int> cand(remaining_nodes.begin(), remaining_nodes.end());
+        // Initialize fini to be the empty set
+        std::vector<int> fini;
+
+        // Call TTT to find all maximal cliques
+        TTT(K, cand, fini, maximal_cliques);
+
+        return getLargestListSize(maximal_cliques);
+    }
+
+    // Recursive function to find all maximal cliques containing clique "K"
+    // and vertices from "cand" but not containing any vertex from "fini"
+    void TTT(std::vector<int> K,
+             std::vector<int> cand, std::vector<int> fini,
+             std::vector<std::vector<int>> &maximal_cliques)
+    {
+        // If cand and fini are both empty, output clique K and return
+        if (cand.empty() && fini.empty())
+        {
+            maximal_cliques.push_back(K);
+            return;
+        }
+
+        // Choose pivot vertex u from cand or fini with the largest number
+        // of neighbors in cand
+        int pivot = -1;
+        int max_neighbors = -1;
+        for (int u : cand)
+        {
+            int num_neighbors = 0;
+            const std::vector<uint32_t> &adjacencies = adjacency.getAdjacencies(u);
+            for (int v : adjacencies)
+            {
+                if (std::find(cand.begin(), cand.end(), v) != cand.end())
+                {
+                    ++num_neighbors;
+                }
+            }
+            if (num_neighbors > max_neighbors)
+            {
+                max_neighbors = num_neighbors;
+                pivot = u;
+            }
+        }
+        if (pivot == -1)
+        {
+            for (int u : fini)
+            {
+                int num_neighbors = 0;
+                const std::vector<uint32_t> &adjacencies = adjacency.getAdjacencies(u);
+                for (int v : adjacencies)
+                {
+                    if (std::find(cand.begin(), cand.end(), v) != cand.end())
+                    {
+                        ++num_neighbors;
+                    }
+                }
+                if (num_neighbors > max_neighbors)
+                {
+                    max_neighbors = num_neighbors;
+                    pivot = u;
+                }
+            }
+        }
+
+        // ext = cand - neighbors of pivot
+        std::vector<int> ext;
+        for (int v : cand)
+        {
+            if (!adjacency.areAdjacent(pivot, v))
+            {
+                ext.push_back(v);
+            }
+        }
+
+        for (int q : ext)
+        {
+            std::vector<int> Kq(K);
+            Kq.push_back(q);
+            std::vector<int> candq;
+            std::vector<int> finiq;
+            for (int v : cand)
+            {
+                if (adjacency.areAdjacent(q, v))
+                {
+                    candq.push_back(v);
+                }
+            }
+            for (int v : fini)
+            {
+                if (adjacency.areAdjacent(q, v))
+                {
+                    finiq.push_back(v);
+                }
+            }
+            TTT(Kq, candq, finiq, maximal_cliques);
+            cand.erase(std::remove(cand.begin(), cand.end(), q), cand.end());
+            fini.push_back(q);
+        }
+    }
 };
 
 void findMaximalClique(const uint32_t n, const uint32_t d, const uint32_t m)
@@ -542,13 +651,16 @@ void findMaximalClique(const uint32_t n, const uint32_t d, const uint32_t m)
         max = g.findMaximalCliqueHeuristicBFS();
         break;
     case 3:
-        max = g.findMaximalCliqueTTT();
+        max = g.findMaximalCliqueGreedy();
         break;
     case 4:
         max = g.findMaximalCliqueBronKerboschSimple();
         break;
     case 5:
         max = g.findMaximalCliqueBronKerboschPivot();
+        break;
+    case 6:
+        max = g.findMaximalCliqueTTT();
         break;
     }
 
@@ -567,9 +679,10 @@ int main()
     std::cout << "Enter a to create adjacency matrix. y/n" << std::endl;
     std::cout << "Enter 1 for brute force." << std::endl;
     std::cout << "Enter 2 for Heuristic Breadth-First Search." << std::endl;
-    std::cout << "Enter 3 for Heuristic Tomita, Tanaka, and Takahashi (TTT)." << std::endl;
+    std::cout << "Enter 3 for Heuristic Greedy." << std::endl;
     std::cout << "Enter 4 for Simple Bron-Kerbosch." << std::endl;
     std::cout << "Enter 5 for Pivot Bron-Kerbosch." << std::endl;
+    std::cout << "Enter 6 for Heuristic Tomita, Tanaka, and Takahashi (TTT)." << std::endl;
     std::cout << "Enter unvalid numbers to exit." << std::endl;
 
     while (true)
@@ -599,7 +712,7 @@ int main()
         std::getline(std::cin, temp);
         if (!std::all_of(temp.begin(), temp.end(), [](char c)
                          { return std::isdigit(c); }) ||
-            !(std::istringstream(temp) >> m) || m < 1 || m > 5)
+            !(std::istringstream(temp) >> m) || m < 1 || m > 6)
         {
             break;
         }
