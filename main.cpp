@@ -133,7 +133,7 @@ public:
     // Constructor
     graph(uint32_t bitlength, uint32_t distance) : bitlength(bitlength), distance(distance)
     {
-        for (uint32_t i = 0; i < (1 << bitlength); i++)
+        for (uint32_t i = 0; i < (1u << bitlength); i++)
         {
             nodes.push_back(i);
         }
