@@ -295,7 +295,7 @@ public:
 
                 for (const uint32_t &neighbor : adjacency.getAdjacencies(current_node))
                 {
-                    if (clique_nodes.count(neighbor) > 0)
+                    if (clique_nodes.count(neighbor))
                     {
                         continue;
                     }
@@ -329,7 +329,6 @@ public:
 
         while (!remaining_nodes.empty())
         {
-            // Choose a vertex with the maximum degree.
             uint32_t max_degree_vertex = remaining_nodes[0];
 
             uint32_t max_degree = adjacency.getAdjacencies(max_degree_vertex).size();
@@ -346,10 +345,8 @@ public:
 
             remaining_nodes.erase(std::find(remaining_nodes.begin(), remaining_nodes.end(), max_degree_vertex));
 
-            // Initialize the clique to be {v}.
             std::vector<uint32_t> clique{max_degree_vertex};
 
-            // Add all vertices that are adjacent to all vertices in the clique.
             for (const uint32_t &u : remaining_nodes)
             {
 
@@ -369,7 +366,6 @@ public:
                 }
             }
 
-            // Add the clique to the set of cliques.
             cliques.push_back(clique);
         }
 
@@ -526,34 +522,25 @@ public:
         std::vector<std::vector<int>> maximal_cliques;
         std::vector<int> remaining_nodes(nodes.begin(), nodes.end());
 
-        // Initialize clique to be empty
         std::vector<int> K;
-        // Initialize cand to be the set of all nodes
         std::vector<int> cand(remaining_nodes.begin(), remaining_nodes.end());
-        // Initialize fini to be the empty set
         std::vector<int> fini;
 
-        // Call TTT to find all maximal cliques
         TTT(K, cand, fini, maximal_cliques);
 
         return getLargestListSize(maximal_cliques);
     }
 
-    // Recursive function to find all maximal cliques containing clique "K"
-    // and vertices from "cand" but not containing any vertex from "fini"
     void TTT(std::vector<int> &K,
              std::vector<int> &cand, std::vector<int> &fini,
              std::vector<std::vector<int>> &maximal_cliques)
     {
-        // If cand and fini are both empty, output clique K and return
         if (cand.empty() && fini.empty())
         {
             maximal_cliques.push_back(K);
             return;
         }
 
-        // Choose pivot vertex u from cand or fini with the largest number
-        // of neighbors in cand
         int pivot = -1;
         int max_neighbors = -1;
         for (const int &u : cand)
@@ -594,7 +581,6 @@ public:
             }
         }
 
-        // ext = cand - neighbors of pivot
         std::vector<int> ext;
         for (const uint32_t &v : cand)
         {
@@ -683,7 +669,7 @@ int main()
     std::cout << "Enter 3 for Heuristic Greedy." << std::endl;
     std::cout << "Enter 4 for Simple Bron-Kerbosch." << std::endl;
     std::cout << "Enter 5 for Pivot Bron-Kerbosch." << std::endl;
-    std::cout << "Enter 6 for Heuristic Tomita, Tanaka, and Takahashi (TTT)." << std::endl;
+    std::cout << "Enter 6 for Tomita, Tanaka, and Takahashi (TTT)." << std::endl;
     std::cout << "Enter unvalid numbers to exit." << std::endl;
 
     while (true)
