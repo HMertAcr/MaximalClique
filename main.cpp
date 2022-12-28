@@ -1,7 +1,9 @@
 #include <iostream>
 #include <string>
 #include <sstream>
+#include <bitset>
 #include <vector>
+#include <unordered_set>
 #include <queue>
 #include <algorithm>
 #include <chrono>
@@ -21,9 +23,8 @@ std::string binaryRep(const uint32_t bit, const uint32_t bitlength)
 
 uint32_t hammingDistance(const uint32_t bit_a, const uint32_t bit_b)
 {
-    return __popcnt(bit_a ^ bit_b);
+    return std::bitset<32>(bit_a ^ bit_b).count();
 }
-// std::bitset::count might be better
 
 template <typename Container>
 uint32_t getLargestListSize(const Container &cliques)
@@ -280,12 +281,12 @@ public:
 
     uint32_t findMaximalCliqueHeuristicBFS()
     {
-        std::vector<std::vector<uint32_t>> cliques;
+        std::vector<std::unordered_set<uint32_t>> cliques;
 
         for (const uint32_t &start_node : nodes)
         {
             std::queue<uint32_t> node_queue({start_node});
-            std::vector<uint32_t> clique_nodes({start_node});
+            std::unordered_set<uint32_t> clique_nodes({start_node});
 
             while (!node_queue.empty())
             {
@@ -294,7 +295,7 @@ public:
 
                 for (const uint32_t &neighbor : adjacency.getAdjacencies(current_node))
                 {
-                    if (std::find(clique_nodes.begin(), clique_nodes.end(), neighbor) != clique_nodes.end())
+                    if (clique_nodes.count(neighbor) > 0)
                     {
                         continue;
                     }
@@ -309,7 +310,7 @@ public:
                     }
                     if (is_adjacent_to_all)
                     {
-                        clique_nodes.push_back(neighbor);
+                        clique_nodes.insert(neighbor);
                         node_queue.push(neighbor);
                     }
                 }
