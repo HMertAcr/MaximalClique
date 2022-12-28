@@ -282,7 +282,7 @@ public:
     {
         std::vector<std::vector<uint32_t>> cliques;
 
-        for (uint32_t start_node : nodes)
+        for (const uint32_t &start_node : nodes)
         {
             std::queue<uint32_t> node_queue({start_node});
             std::vector<uint32_t> clique_nodes({start_node});
@@ -292,14 +292,14 @@ public:
                 uint32_t current_node = node_queue.front();
                 node_queue.pop();
 
-                for (uint32_t neighbor : adjacency.getAdjacencies(current_node))
+                for (const uint32_t &neighbor : adjacency.getAdjacencies(current_node))
                 {
                     if (std::find(clique_nodes.begin(), clique_nodes.end(), neighbor) != clique_nodes.end())
                     {
                         continue;
                     }
                     bool is_adjacent_to_all = true;
-                    for (uint32_t clique_node : clique_nodes)
+                    for (const uint32_t &clique_node : clique_nodes)
                     {
                         if (!adjacency.areAdjacent(neighbor, clique_node))
                         {
@@ -333,7 +333,7 @@ public:
 
             uint32_t max_degree = adjacency.getAdjacencies(max_degree_vertex).size();
 
-            for (uint32_t v : remaining_nodes)
+            for (const uint32_t &v : remaining_nodes)
             {
                 uint32_t degree = adjacency.getAdjacencies(v).size();
                 if (degree > max_degree)
@@ -349,11 +349,11 @@ public:
             std::vector<uint32_t> clique{max_degree_vertex};
 
             // Add all vertices that are adjacent to all vertices in the clique.
-            for (uint32_t u : remaining_nodes)
+            for (const uint32_t &u : remaining_nodes)
             {
 
                 bool is_adjacent_to_all_vertices = true;
-                for (uint32_t v : clique)
+                for (const uint32_t &v : clique)
                 {
                     if (!adjacency.areAdjacent(u, v))
                     {
@@ -454,7 +454,7 @@ public:
                 uint32_t pivot = choosePivot(P, X);
 
                 std::vector<uint32_t> P_without_neighbors_of_pivot;
-                for (uint32_t v : P)
+                for (const uint32_t &v : P)
                 {
                     if (!adjacency.areAdjacent(pivot, v))
                     {
@@ -462,20 +462,20 @@ public:
                     }
                 }
 
-                for (uint32_t v : P_without_neighbors_of_pivot)
+                for (const uint32_t &v : P_without_neighbors_of_pivot)
                 {
                     std::vector<uint32_t> newR = R;
                     newR.push_back(v);
                     std::vector<uint32_t> newP;
                     std::vector<uint32_t> newX;
-                    for (uint32_t u : P)
+                    for (const uint32_t &u : P)
                     {
                         if (adjacency.areAdjacent(v, u))
                         {
                             newP.push_back(u);
                         }
                     }
-                    for (uint32_t u : X)
+                    for (const uint32_t &u : X)
                     {
                         if (adjacency.areAdjacent(v, u))
                         {
@@ -494,17 +494,17 @@ public:
     {
         uint32_t pivot = P[0];
         uint32_t maxNeighbors = 0;
-        for (uint32_t u : P)
+        for (const uint32_t &u : P)
         {
             uint32_t neighbors = 0;
-            for (uint32_t v : P)
+            for (const uint32_t &v : P)
             {
                 if (adjacency.areAdjacent(u, v))
                 {
                     neighbors++;
                 }
             }
-            for (uint32_t v : X)
+            for (const uint32_t &v : X)
             {
                 if (adjacency.areAdjacent(u, v))
                 {
@@ -555,11 +555,11 @@ public:
         // of neighbors in cand
         int pivot = -1;
         int max_neighbors = -1;
-        for (int u : cand)
+        for (const int &u : cand)
         {
             int num_neighbors = 0;
             const std::vector<uint32_t> &adjacencies = adjacency.getAdjacencies(u);
-            for (int v : adjacencies)
+            for (const int &v : adjacencies)
             {
                 if (std::find(cand.begin(), cand.end(), v) != cand.end())
                 {
@@ -574,11 +574,11 @@ public:
         }
         if (pivot == -1)
         {
-            for (int u : fini)
+            for (const int &u : fini)
             {
                 int num_neighbors = 0;
                 const std::vector<uint32_t> &adjacencies = adjacency.getAdjacencies(u);
-                for (int v : adjacencies)
+                for (const uint32_t &v : adjacencies)
                 {
                     if (std::find(cand.begin(), cand.end(), v) != cand.end())
                     {
@@ -595,7 +595,7 @@ public:
 
         // ext = cand - neighbors of pivot
         std::vector<int> ext;
-        for (int v : cand)
+        for (const uint32_t &v : cand)
         {
             if (!adjacency.areAdjacent(pivot, v))
             {
@@ -603,7 +603,7 @@ public:
             }
         }
 
-        for (int q : ext)
+        for (const uint32_t &q : ext)
         {
             K.push_back(q);
             std::vector<int> candq;
@@ -615,7 +615,7 @@ public:
                     candq.push_back(v);
                 }
             }
-            for (int v : fini)
+            for (const uint32_t &v : fini)
             {
                 if (adjacency.areAdjacent(q, v))
                 {
