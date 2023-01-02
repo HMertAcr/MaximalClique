@@ -516,105 +516,6 @@ public:
         }
         return pivot;
     }
-
-    uint32_t findMaximalCliqueTTT()
-    {
-        std::vector<std::vector<int>> maximal_cliques;
-        std::vector<int> remaining_nodes(nodes.begin(), nodes.end());
-
-        std::vector<int> K;
-        std::vector<int> cand(remaining_nodes.begin(), remaining_nodes.end());
-        std::vector<int> fini;
-
-        TTT(K, cand, fini, maximal_cliques);
-
-        return getLargestListSize(maximal_cliques);
-    }
-
-    void TTT(std::vector<int> &K,
-             std::vector<int> &cand, std::vector<int> &fini,
-             std::vector<std::vector<int>> &maximal_cliques)
-    {
-        if (cand.empty() && fini.empty())
-        {
-            maximal_cliques.push_back(K);
-            return;
-        }
-
-        int pivot = -1;
-        int max_neighbors = -1;
-        for (const int &u : cand)
-        {
-            int num_neighbors = 0;
-            const std::vector<uint32_t> &adjacencies = adjacency.getAdjacencies(u);
-            for (const int &v : adjacencies)
-            {
-                if (std::find(cand.begin(), cand.end(), v) != cand.end())
-                {
-                    ++num_neighbors;
-                }
-            }
-            if (num_neighbors > max_neighbors)
-            {
-                max_neighbors = num_neighbors;
-                pivot = u;
-            }
-        }
-        if (pivot == -1)
-        {
-            for (const int &u : fini)
-            {
-                int num_neighbors = 0;
-                const std::vector<uint32_t> &adjacencies = adjacency.getAdjacencies(u);
-                for (const uint32_t &v : adjacencies)
-                {
-                    if (std::find(cand.begin(), cand.end(), v) != cand.end())
-                    {
-                        ++num_neighbors;
-                    }
-                }
-                if (num_neighbors > max_neighbors)
-                {
-                    max_neighbors = num_neighbors;
-                    pivot = u;
-                }
-            }
-        }
-
-        std::vector<int> ext;
-        for (const uint32_t &v : cand)
-        {
-            if (!adjacency.areAdjacent(pivot, v))
-            {
-                ext.push_back(v);
-            }
-        }
-
-        for (const uint32_t &q : ext)
-        {
-            K.push_back(q);
-            std::vector<int> candq;
-            std::vector<int> finiq;
-            for (int v : cand)
-            {
-                if (adjacency.areAdjacent(q, v))
-                {
-                    candq.push_back(v);
-                }
-            }
-            for (const uint32_t &v : fini)
-            {
-                if (adjacency.areAdjacent(q, v))
-                {
-                    finiq.push_back(v);
-                }
-            }
-            TTT(K, candq, finiq, maximal_cliques);
-            cand.erase(std::remove(cand.begin(), cand.end(), q), cand.end());
-            fini.push_back(q);
-            K.pop_back();
-        }
-    }
 };
 
 void findMaximalClique(const uint32_t n, const uint32_t d, const uint32_t m)
@@ -646,9 +547,6 @@ void findMaximalClique(const uint32_t n, const uint32_t d, const uint32_t m)
     case 5:
         max = g.findMaximalCliqueBronKerboschPivot();
         break;
-    case 6:
-        max = g.findMaximalCliqueTTT();
-        break;
     }
 
     timepoint_t end = clock_t::now();
@@ -669,7 +567,6 @@ int main()
     std::cout << "Enter 3 for Heuristic Greedy." << std::endl;
     std::cout << "Enter 4 for Simple Bron-Kerbosch." << std::endl;
     std::cout << "Enter 5 for Pivot Bron-Kerbosch." << std::endl;
-    std::cout << "Enter 6 for Tomita, Tanaka, and Takahashi (TTT)." << std::endl;
     std::cout << "Enter unvalid numbers to exit." << std::endl;
 
     while (true)
@@ -699,7 +596,7 @@ int main()
         std::getline(std::cin, temp);
         if (!std::all_of(temp.begin(), temp.end(), [](char c)
                          { return std::isdigit(c); }) ||
-            !(std::istringstream(temp) >> m) || m < 1 || m > 6)
+            !(std::istringstream(temp) >> m) || m < 1 || m > 5)
         {
             break;
         }
